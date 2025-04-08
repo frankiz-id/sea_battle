@@ -13,6 +13,7 @@ class ships_on_grid:
         self.ship_config = ship_config
         self.ship_groups = self.group_ships_by_size()
 
+
     # формирует словарь : {размер : количество}
     def group_ships_by_size(self):
         groups = {}
@@ -72,6 +73,11 @@ class ships_on_grid:
             if cell not in self.set_available_cells:
                 return False
         return True
+
+    def create_lots_of_game_ships_manual(self, list):
+        self.list_of_game_ships = [
+            Ship(copy.deepcopy(ship.cells), ship.orientation) for ship in list
+        ]
 
     def create_lots_of_game_ships(self):
         # Сортируем размеры по убыванию для большей надежности, хотя корректность конфигурации кораблей и так гарантируется

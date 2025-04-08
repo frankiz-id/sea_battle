@@ -5,10 +5,11 @@ from draw_Field import *
 
 
 class game_with_computer:
-    def __init__(self, ai_type, field_size, ship_config):
+    def __init__(self, ai_type, field_size, ship_config, ship_placement):
         self.field_size = field_size
         self.ship_config = ship_config
         self.field = draw_Field(field_size)
+        self.ship_placement = ship_placement
 
         # Инициализация игроков
         self.player = ships_on_grid(field_size, ship_config)
