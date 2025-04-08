@@ -74,10 +74,13 @@ class ships_on_grid:
                 return False
         return True
 
-    def create_lots_of_game_ships_manual(self, list):
-        self.list_of_game_ships = [
-            Ship(copy.deepcopy(ship.cells), ship.orientation) for ship in list
-        ]
+    def create_lots_of_game_ships_manual(self, manually_placed_ships):
+        self.list_of_game_ships.clear()
+        self.set_available_cells = set((i, j) for i in range(1, self.field_size[0] + 1) for j in range(1, self.field_size[1] + 1))
+
+        for ship in manually_placed_ships:
+            self.list_of_game_ships.append(copy.deepcopy(ship))
+            self.reserve_ship_area(ship.cells)
 
     def create_lots_of_game_ships(self):
         # Сортируем размеры по убыванию для большей надежности, хотя корректность конфигурации кораблей и так гарантируется
