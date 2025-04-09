@@ -79,36 +79,65 @@ class game_with_computer:
             pygame.draw.rect(self.field.screen, BLACK, (x, y, BLOCK_SIZE, BLOCK_SIZE), 3)
         pygame.display.update()
 
-    def _can_place_cell(self, cell):
-        # Проверка, что клетка доступна
-        if cell not in self.available_cells_to_manual_placement:
+    def can_place_cell(self, cell):
+        # Клетка должна быть доступна и не использоваться в текущем корабле
+        if cell not in self.available_cells_to_manual_placement or cell in self.current_ship_cells:
             return False
-        # Для первой клетки проверка не нужна
+
+        # Для первой клетки ограничений нет
         if not self.current_ship_cells:
             return True
-        # Проверка, что клетка не совпадает с уже выбранными
-        if cell in self.current_ship_cells:
-            return False
+
         # Для второй клетки проверяем соседство
         if len(self.current_ship_cells) == 1:
             prev = self.current_ship_cells[0]
             return (abs(cell[0] - prev[0]) + abs(cell[1] - prev[1])) == 1
-        # Для последующих клеток проверяем направление и линейность
-        first, second = self.current_ship_cells[:2]
-        if first[0] == second[0]:  # Горизонтальный
-            return (cell[0] == first[0] and
-                    abs(cell[1] - self.current_ship_cells[-1][1]) == 1 and
-                    all(c[0] == first[0] for c in self.current_ship_cells))
-        else:  # Вертикальный
-            return (cell[1] == first[1] and
-                    abs(cell[0] - self.current_ship_cells[-1][0]) == 1 and
-                    all(c[1] == first[1] for c in self.current_ship_cells))
 
-    def _add_ship_cell(self, cell):
+        # Для последующих клеток определяем возможные направления
+        first_dir = self.get_ship_direction()
+        new_dir = self.get_cell_direction(cell)
+
+        # Клетка должна продолжать текущее направление
+        return new_dir == first_dir and self.is_at_end(cell, first_dir)
+
+    def get_ship_direction(self):
+        """Определяет направление уже размещённой части корабля"""
+        if len(self.current_ship_cells) < 2:
+            return None
+
+        first, second = self.current_ship_cells[0], self.current_ship_cells[1]
+        if first[0] == second[0]:  # Горизонтальное
+            return 'horizontal'
+        else:  # Вертикальное
+            return 'vertical'
+
+    def get_cell_direction(self, cell):
+        """Определяет направление новой клетки относительно последней в корабле"""
+        last = self.current_ship_cells[-1]
+        if cell[0] == last[0]:  # Горизонтальное
+            return 'horizontal'
+        elif cell[1] == last[1]:  # Вертикальное
+            return 'vertical'
+        return None
+
+    def is_at_end(self, cell, direction):
+        """Проверяет, что клетка находится на одном из концов корабля"""
+        if direction == 'horizontal':
+            min_col = min(c[1] for c in self.current_ship_cells)
+            max_col = max(c[1] for c in self.current_ship_cells)
+            return (cell[0] == self.current_ship_cells[0][0] and
+                    (cell[1] == min_col - 1 or cell[1] == max_col + 1))
+        else:  # Вертикальное
+            min_row = min(c[0] for c in self.current_ship_cells)
+            max_row = max(c[0] for c in self.current_ship_cells)
+            return (cell[1] == self.current_ship_cells[0][1] and
+                    (cell[0] == min_row - 1 or cell[0] == max_row + 1))
+
+    def add_ship_cell(self, cell):
         self.current_ship_cells.append(cell)
 
 
-    def _finalize_ship(self):
+    def finalize_ship(self):
         # Определение ориентации
         if len(self.current_ship_cells) > 1:
             first, second = self.current_ship_cells[:2]
@@ -136,7 +165,7 @@ class game_with_computer:
             self.player.create_lots_of_game_ships_manual(self.manual_ships)
             self.player.create_list_alive_ships()
             self.manual_placement_mode = False
-            self._start_normal_game()
+            self.start_normal_game()
 
         self.draw_manual_placement_ui()
 
@@ -158,10 +187,10 @@ class game_with_computer:
                 row = ((y - UPPER_MARGIN) // BLOCK_SIZE) + 1
                 cell = (row, col)
 
-                if self._can_place_cell(cell):
-                    self._add_ship_cell(cell)
+                if self.can_place_cell(cell):
+                    self.add_ship_cell(cell)
                     if len(self.current_ship_cells) == self.current_ship_type:
-                        self._finalize_ship()
+                        self.finalize_ship()
                     self.draw_manual_placement_ui()
 
     def start_game(self):
@@ -173,13 +202,13 @@ class game_with_computer:
         if self.ship_placement == 1:  # Автоматическая расстановка
             self.player.create_lots_of_game_ships()
             self.player.create_list_alive_ships()
-            self._start_normal_game()
+            self.start_normal_game()
         else:  # Ручная расстановка
             self.manual_placement_mode = True
             self.draw_manual_placement_ui()
 
 
-    def _start_normal_game(self):
+    def start_normal_game(self):
         player_offset = LEFT_RIGHT_MARGIN + self.field_size[1] * BLOCK_SIZE + 10 * BLOCK_SIZE
         self.field.draw_ships(self.player.list_of_game_ships, player_offset)
         self.field.draw_ships(self.computer.list_of_game_ships, LEFT_RIGHT_MARGIN)
