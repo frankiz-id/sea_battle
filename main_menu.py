@@ -7,7 +7,8 @@ MENU_OPTIONS = {
     'STRONG_AI': '2. Play vs Strong AI',
     'FRIEND': '3. Play vs Friend',
     'SETTINGS': '4. Settings',
-    'EXIT': '5. Exit'
+    'HELP': '5. Help',
+    'EXIT': '6. Exit'
 }
 
 SETTINGS_OPTIONS = [
@@ -16,6 +17,39 @@ SETTINGS_OPTIONS = [
     "manual/automatic placement: ",
     "Back to Main Menu"
 ]
+
+help_lines = [
+    "1. Главное меню:"
+    "Главное меню предоставляет 6 опций, которые можно выбрать на цифры 1-6:",
+    "Play vs Weak AI - игра против слабого ИИ (клавиша 1)",
+    "Play vs Strong AI - игра против сильного ИИ (клавиша 2)",
+    "Play vs Friend - игра против друга на одном устройстве (клавиша 3)",
+    "Settings - настройки игры (клавиша 4)",
+    "Help - справка по игре (клавиша 5)",
+    "Exit - выход из игры (клавиша 6)",
+    "",
+    "2. Settings:",
+    "При выборе 'Settings' (клавиша 4) открывается подменю с настройками:",
+    "Field Size (5-16) - размер игрового поля",
+    "Ship Configuration - конфигурация кораблей",
+    "manual/automatic placement - выбор способа расстановки кораблей",
+    "Back to Main Menu - возврат в главное меню",
+    "Управление в меню настроек:",
+    "Клавиши ↑ и ↓ - перемещение между пунктами меню",
+    "Enter - выбор текущего пункта",
+    "ESC - возврат в главное меню",
+    "",
+    "3. Особенности игры при выборе manual(ручной) расстановки кораблей в настройках:",
+    "1-4 - выбор размера корабля, который хотите установить",
+    "ЛКМ - выбор клетки для размещения корабля. Выбирайте клетки до тех пор, пока не разместите весь корабль",
+    "Если во время размещения вы поймете, что корабль не помещается на выбранное место или вы передумали с расстановкой, "
+        "повторно нажмите 1-4 для выбора размера и начните установку заново"
+]
+
+HELP_BACKGROUND = (240, 240, 240)  # Светло-серый цвет фона справки
+HELP_TEXT_COLOR = (0, 0, 0)        # Черный цвет текста
+BACK_BUTTON_COLOR = (180, 180, 180)  # Цвет кнопки "Назад"
+BACK_BUTTON_HOVER = (200, 200, 200)  # Цвет кнопки "Назад" при наведении
 
 SHIP_TYPES = ["4-deck ship", "3-deck ship", "2-deck ship", "1-deck ship"]
 SHIP_SIZES = [4, 3, 2, 1]
@@ -42,6 +76,10 @@ class main_menu:
         self.ship_cell_requirements = {4: 14, 3: 12, 2: 9, 1: 5}
         self.ship_placement = 1  # 0 - ручная, 1 - автоматическая
 
+        self.show_help = False  # Флаг отображения справки
+        self.content_height = len(help_lines) * 30 + 200
+        self.help_scroll_y = 0
+
 
     def draw_text(self, text, x, y, color=BLACK):
         text_surface = self.font.render(text, False, color)
@@ -50,11 +88,77 @@ class main_menu:
     def run(self):
         running = True
         while running:
-            self.draw_main_menu()
+            if self.show_help:
+                self.draw_help_screen()
+                running = self.handle_help_events()  # Используем специальный обработчик
+            else:
+                self.draw_main_menu()
+                running = self.handle_main_menu_events()
+
             pygame.display.update()
-            running = self.handle_main_menu_events()
 
         return self.game_mode, self.ship_placement, self.field_size_in_blocks, self.ship_config
+
+    def draw_help_screen(self):
+        self.screen.fill(HELP_BACKGROUND)
+
+        # Инициализация параметров прокрутки
+        if not hasattr(self, 'help_scroll_y'):
+            self.help_scroll_y = 0
+        self.content_height = 1500  # Общая высота контента
+
+        # Создаем поверхность для контента
+        content_surface = pygame.Surface((self.screen.get_width(), self.content_height))
+        content_surface.fill(HELP_BACKGROUND)
+
+        # Отрисовка текста на content_surface
+        y_pos = 20
+        for line in help_lines:
+            text = self.font.render(line, True, HELP_TEXT_COLOR)
+            content_surface.blit(text, (50, y_pos))
+            y_pos += 30
+
+        # Отображаем видимую часть с учетом прокрутки
+        self.screen.blit(content_surface, (0, -self.help_scroll_y))
+
+        # Кнопка "Назад" (рисуем отдельно, чтобы была фиксированной)
+        back_button = pygame.Rect(
+            self.screen.get_width() // 2 - 100,
+            self.screen.get_height() - 80,
+            200, 50
+        )
+        pygame.draw.rect(self.screen, BACK_BUTTON_COLOR, back_button)
+        back_text = self.font.render("Назад", True, BLACK)
+        self.screen.blit(back_text, (
+            back_button.x + back_button.width // 2 - back_text.get_width() // 2,
+            back_button.y + back_button.height // 2 - back_text.get_height() // 2
+        ))
+
+    def handle_help_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+
+                # Проверяем кнопку "Назад" (фиксированная позиция)
+                back_button = pygame.Rect(
+                    self.screen.get_width() // 2 - 100,
+                    self.screen.get_height() - 80,
+                    200, 50
+                )
+                if back_button.collidepoint(mouse_pos):
+                    self.show_help = False
+                    return True
+
+            # Обработка прокрутки колесиком мыши
+            if event.type == pygame.MOUSEWHEEL:
+                visible_height = self.screen.get_height()
+                max_scroll = self.content_height - visible_height
+                self.help_scroll_y = max(0, min(self.help_scroll_y - event.y * 30, max_scroll))
+
+        return True
 
     def draw_main_menu(self):
         self.screen.fill(WHITE)
@@ -67,20 +171,32 @@ class main_menu:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_1:
-                    self.game_mode = 'weak_ai'
-                    return False
-                elif event.key == pygame.K_2:
-                    self.game_mode = 'strong_ai'
-                    return False
-                elif event.key == pygame.K_3:
-                    self.game_mode = 'friend'
-                    return False
-                elif event.key == pygame.K_4:
-                    self.show_settings(0)
-                elif event.key == pygame.K_5:
-                    return False
+            if self.show_help:
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = pygame.mouse.get_pos()
+                    back_button = pygame.Rect(
+                        self.screen.get_width() // 2 - 100,
+                        self.screen.get_height() - 80, 200, 50
+                    )
+                    if back_button.collidepoint(mouse_pos):
+                        self.show_help = False
+            else:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_1:
+                        self.game_mode = 'weak_ai'
+                        return False
+                    elif event.key == pygame.K_2:
+                        self.game_mode = 'strong_ai'
+                        return False
+                    elif event.key == pygame.K_3:
+                        self.game_mode = 'friend'
+                        return False
+                    elif event.key == pygame.K_4:
+                        self.show_settings(0)
+                    elif event.key == pygame.K_5:
+                        self.show_help = True
+                    elif event.key == pygame.K_6:
+                        return False
         return True
 
     def show_settings(self, selected_option):

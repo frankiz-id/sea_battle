@@ -21,7 +21,7 @@ class draw_Field:
         self.field_size = field_size
         # Динамический расчет размера окна
         self.screen_width = LEFT_RIGHT_MARGIN * 2 + field_size[1] * BLOCK_SIZE * 2 + 10 * BLOCK_SIZE
-        self.screen_height = UPPER_MARGIN + field_size[0] * BLOCK_SIZE + 100
+        self.screen_height = UPPER_MARGIN + field_size[0] * BLOCK_SIZE + 150
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         self.screen.fill(WHITE)
 
@@ -58,9 +58,16 @@ class draw_Field:
                 self.screen.blit(letter, (offset_x + i * BLOCK_SIZE + (BLOCK_SIZE // 2 - letter.get_width() // 2),
                                           UPPER_MARGIN + self.field_size[0] * BLOCK_SIZE + 10))
 
-    def sign_grids(self):
-        player1 = FONT.render("Player 1", True, BLACK)
-        player2 = FONT.render("Player 2", True, BLACK)
+    def sign_grids(self, mode='Computer', draw_captions_when_playing_with_friend=0):
+        if mode == 'Computer':
+            player1 = FONT.render("Computer", True, BLACK)
+            player2 = FONT.render("Player", True, BLACK)
+        elif draw_captions_when_playing_with_friend:
+            player1 = FONT.render("Player 1", True, BLACK)
+            player2 = FONT.render("Player 2", True, BLACK)
+        else:
+            player1 = FONT.render("", True, BLACK)
+            player2 = FONT.render("", True, BLACK)
 
         # Подписи для обоих полей
         self.screen.blit(player1, (LEFT_RIGHT_MARGIN + self.field_size[1] * BLOCK_SIZE // 2 - player1.get_width() // 2,
@@ -78,7 +85,7 @@ class draw_Field:
                 rect_y = UPPER_MARGIN + (row - 1) * BLOCK_SIZE
                 pygame.draw.rect(self.screen, BLACK, (rect_x, rect_y, BLOCK_SIZE, BLOCK_SIZE), 3)
 
-    def draw_after_shot(self, fired_block, offset_x):
+    def draw_after_shot(self, fired_block, offset_x, success):
         row, col = fired_block
         x = offset_x + (col - 1) * BLOCK_SIZE
         y = UPPER_MARGIN + (row - 1) * BLOCK_SIZE
@@ -86,6 +93,8 @@ class draw_Field:
         # Рисуем крестик
         pygame.draw.line(self.screen, BLACK, (x, y), (x + BLOCK_SIZE, y + BLOCK_SIZE), 2)
         pygame.draw.line(self.screen, BLACK, (x + BLOCK_SIZE, y), (x, y + BLOCK_SIZE), 2)
+        if success:
+            pygame.draw.rect(self.screen, BLACK, (x, y, BLOCK_SIZE, BLOCK_SIZE), 3)
 
     def draw_destroyed_area(self, ship, offset_x):
         for cell in ship.cells:
