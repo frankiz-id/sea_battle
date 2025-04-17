@@ -1,30 +1,68 @@
 import copy
-from Ship import *
-from draw_Field import *
+from typing import Dict, List, Optional, Set, Tuple
+
+import pygame
+
+from draw_Field import BLACK, BLOCK_SIZE, LEFT_RIGHT_MARGIN, UPPER_MARGIN, WHITE
+from Ship import Ship
 
 
 class manual_ship_placer:
-    def __init__(self, field_size, ship_config, field_offset, screen_width):
+    """Класс для ручной расстановки кораблей на поле."""
+
+    def __init__(
+        self,
+        field_size: Tuple[int, int],
+        ship_config: List[int],
+        field_offset: Tuple[int, int],
+        screen_width: int,
+    ) -> None:
+        """
+        Инициализация объекта ручной расстановки кораблей.
+
+        Args:
+            field_size: Размер поля в клетках (ширина, высота)
+            ship_config: Конфигурация кораблей
+            field_offset: Смещение поля от краев экрана (x, y)
+            screen_width: Ширина экрана
+        """
         self.field_size = field_size
         self.ship_config = ship_config
         self.field_offset = field_offset
         self.screen_width = screen_width
 
-        self.current_ship_type = None
-        self.current_ship_cells = []
-        self.available_cells = set((i, j) for i in range(1, field_size[0] + 1) for j in range(1, field_size[1] + 1))
+        self.current_ship_type: Optional[int] = None
+        self.current_ship_cells: List[Tuple[int, int]] = []
+        self.available_cells: Set[Tuple[int, int]] = set(
+            (i, j)
+            for i in range(1, field_size[0] + 1)
+            for j in range(1, field_size[1] + 1)
+        )
         # Инициализируем счетчики кораблей
-        self.ship_counts = self.count_ships_by_type()
-        self.placed_ships = []
+        self.ship_counts: Dict[int, int] = self.count_ships_by_type()
+        self.placed_ships: List[Ship] = []
         self.completed = False
 
-    def count_ships_by_type(self):
-        counts = {}
+    def count_ships_by_type(self) -> Dict[int, int]:
+        """
+        Подсчитывает количество кораблей каждого типа.
+
+        Returns:
+            Словарь с количеством кораблей по размерам
+        """
+        counts: dict[int, int] = {}
         for size in self.ship_config:
             counts[size] = counts.get(size, 0) + 1
         return counts
 
-    def handle_event(self, event, screen):
+    def handle_event(self, event: pygame.event.Event, screen: pygame.Surface) -> None:
+        """
+        Обрабатывает события во время расстановки кораблей.
+
+        Args:
+            event: Событие pygame для обработки
+            screen: Поверхность pygame для отрисовки
+        """
         if event.type == pygame.KEYDOWN:
             if pygame.K_1 <= event.key <= pygame.K_4:
                 size = event.key - pygame.K_0
@@ -34,8 +72,14 @@ class manual_ship_placer:
 
         elif event.type == pygame.MOUSEBUTTONDOWN and self.current_ship_type:
             x, y = event.pos
-            if (self.field_offset[0] <= x <= self.field_offset[0] + self.field_size[1] * BLOCK_SIZE and
-                    self.field_offset[1] <= y <= self.field_offset[1] + self.field_size[0] * BLOCK_SIZE):
+            if (
+                self.field_offset[0]
+                <= x
+                <= self.field_offset[0] + self.field_size[1] * BLOCK_SIZE
+                and self.field_offset[1]
+                <= y
+                <= self.field_offset[1] + self.field_size[0] * BLOCK_SIZE
+            ):
 
                 col = ((x - self.field_offset[0]) // BLOCK_SIZE) + 1
                 row = ((y - self.field_offset[1]) // BLOCK_SIZE) + 1
@@ -48,7 +92,16 @@ class manual_ship_placer:
 
         self.draw(screen)
 
-    def can_place_cell(self, cell):
+    def can_place_cell(self, cell: Tuple[int, int]) -> bool:
+        """
+        Проверяет, можно ли разместить клетку корабля.
+
+        Args:
+            cell: Координаты клетки (строка, столбец)
+
+        Returns:
+            True, если клетку можно разместить, иначе False
+        """
         if cell not in self.available_cells or cell in self.current_ship_cells:
             return False
 
@@ -63,36 +116,70 @@ class manual_ship_placer:
         new_dir = self.get_cell_direction(cell)
         return new_dir == first_dir and self.is_at_end(cell, first_dir)
 
-    def get_ship_direction(self):
+    def get_ship_direction(self) -> Optional[str]:
+        """
+        Определяет направление корабля.
+
+        Returns:
+            'horizontal' - горизонтальное, 'vertical' - вертикальное, None - не определено
+        """
         if len(self.current_ship_cells) < 2:
             return None
         first, second = self.current_ship_cells[0], self.current_ship_cells[1]
-        return 'horizontal' if first[0] == second[0] else 'vertical'
+        return "horizontal" if first[0] == second[0] else "vertical"
 
-    def get_cell_direction(self, cell):
+    def get_cell_direction(self, cell: Tuple[int, int]) -> Optional[str]:
+        """
+        Определяет направление новой клетки относительно последней в корабле.
+
+        Args:
+            cell: Координаты клетки (строка, столбец)
+
+        Returns:
+            'horizontal' - горизонтальное, 'vertical' - вертикальное, None - не определено
+        """
         last = self.current_ship_cells[-1]
         if cell[0] == last[0]:
-            return 'horizontal'
+            return "horizontal"
         elif cell[1] == last[1]:
-            return 'vertical'
+            return "vertical"
         return None
 
-    def is_at_end(self, cell, direction):
-        if direction == 'horizontal':
+    def is_at_end(self, cell: Tuple[int, int], direction: str | None) -> bool:
+        """
+        Проверяет, находится ли клетка на конце корабля.
+
+        Args:
+            cell: Координаты клетки (строка, столбец)
+            direction: Направление корабля ('horizontal' или 'vertical')
+
+        Returns:
+            True, если клетка на конце, иначе False
+        """
+        if direction == "horizontal":
             min_col = min(c[1] for c in self.current_ship_cells)
             max_col = max(c[1] for c in self.current_ship_cells)
-            return (cell[0] == self.current_ship_cells[0][0] and
-                    (cell[1] == min_col - 1 or cell[1] == max_col + 1))
+            return cell[0] == self.current_ship_cells[0][0] and (
+                cell[1] == min_col - 1 or cell[1] == max_col + 1
+            )
         else:
             min_row = min(c[0] for c in self.current_ship_cells)
             max_row = max(c[0] for c in self.current_ship_cells)
-            return (cell[1] == self.current_ship_cells[0][1] and
-                    (cell[0] == min_row - 1 or cell[0] == max_row + 1))
+            return cell[1] == self.current_ship_cells[0][1] and (
+                cell[0] == min_row - 1 or cell[0] == max_row + 1
+            )
 
-    def add_ship_cell(self, cell):
+    def add_ship_cell(self, cell: Tuple[int, int]) -> None:
+        """
+        Добавляет клетку к текущему кораблю.
+
+        Args:
+            cell: Координаты клетки (строка, столбец)
+        """
         self.current_ship_cells.append(cell)
 
-    def finalize_ship(self):
+    def finalize_ship(self) -> None:
+        """Завершает создание корабля и резервирует область вокруг него."""
         if not self.current_ship_cells or not self.current_ship_type:
             return
         # Определяем ориентацию корабля
@@ -127,37 +214,59 @@ class manual_ship_placer:
         if all(count <= 0 for count in self.ship_counts.values()):
             self.completed = True
 
-    def draw_ship_info(self, screen):
-        """Отрисовка информации о кораблях между полями"""
+    def draw_ship_info(self, screen: pygame.Surface) -> None:
+        """Отрисовка информации о кораблях между полями."""
         x_pos = LEFT_RIGHT_MARGIN + self.field_size[1] * BLOCK_SIZE + 2 * BLOCK_SIZE
         y_pos = UPPER_MARGIN
 
-        font = pygame.font.SysFont('Arial', 20)
+        font = pygame.font.SysFont("Arial", 20)
         # Отображаем только те типы кораблей, которые еще нужно разместить
-        for size in sorted([s for s in self.ship_counts if self.ship_counts[s] > 0], reverse=True):
+        for size in sorted(
+            [s for s in self.ship_counts if self.ship_counts[s] > 0], reverse=True
+        ):
             text = f"{size}-палубный: {self.ship_counts[size]} осталось"
             text_surface = font.render(text, True, BLACK)
             screen.blit(text_surface, (x_pos, y_pos))
             y_pos += 25
 
-    def draw(self, screen):
+    def draw(self, screen: pygame.Surface) -> None:
+        """Отрисовка процесса расстановки кораблей."""
         # Отрисовка фона
-        pygame.draw.rect(screen, WHITE,
-                         (self.field_offset[0], self.field_offset[1],
-                          self.field_size[1] * BLOCK_SIZE, self.field_size[0] * BLOCK_SIZE))
+        pygame.draw.rect(
+            screen,
+            WHITE,
+            (
+                self.field_offset[0],
+                self.field_offset[1],
+                self.field_size[1] * BLOCK_SIZE,
+                self.field_size[0] * BLOCK_SIZE,
+            ),
+        )
 
         # Отрисовка сетки
         for i in range(self.field_size[0] + 1):
-            pygame.draw.line(screen, BLACK,
-                             (self.field_offset[0], self.field_offset[1] + i * BLOCK_SIZE),
-                             (self.field_offset[0] + self.field_size[1] * BLOCK_SIZE,
-                              self.field_offset[1] + i * BLOCK_SIZE), 1)
+            pygame.draw.line(
+                screen,
+                BLACK,
+                (self.field_offset[0], self.field_offset[1] + i * BLOCK_SIZE),
+                (
+                    self.field_offset[0] + self.field_size[1] * BLOCK_SIZE,
+                    self.field_offset[1] + i * BLOCK_SIZE,
+                ),
+                1,
+            )
 
         for i in range(self.field_size[1] + 1):
-            pygame.draw.line(screen, BLACK,
-                             (self.field_offset[0] + i * BLOCK_SIZE, self.field_offset[1]),
-                             (self.field_offset[0] + i * BLOCK_SIZE,
-                              self.field_offset[1] + self.field_size[0] * BLOCK_SIZE), 1)
+            pygame.draw.line(
+                screen,
+                BLACK,
+                (self.field_offset[0] + i * BLOCK_SIZE, self.field_offset[1]),
+                (
+                    self.field_offset[0] + i * BLOCK_SIZE,
+                    self.field_offset[1] + self.field_size[0] * BLOCK_SIZE,
+                ),
+                1,
+            )
 
         # Отрисовка размещенных кораблей
         for ship in self.placed_ships:

@@ -1,12 +1,34 @@
-from draw_Field import *
-from manual_ship_placer import manual_ship_placer
+from typing import List, Optional, Set, Tuple
+
+import pygame
+
 from computerAI import computerAI
 from computerAI_advanced import computerAI_advanced
+from draw_Field import BLOCK_SIZE, LEFT_RIGHT_MARGIN, UPPER_MARGIN, WHITE, draw_Field
+from manual_ship_placer import manual_ship_placer
+from Ship import Ship
 from ships_on_grid import ships_on_grid
 
 
 class game_with_computer:
-    def __init__(self, ai_type, field_size, ship_config, ship_placement):
+    """Класс для управления игрой против компьютера."""
+
+    def __init__(
+        self,
+        ai_type: str,
+        field_size: Tuple[int, int],
+        ship_config: List[int],
+        ship_placement: int,
+    ) -> None:
+        """
+        Инициализация игры против компьютера.
+
+        Args:
+            ai_type: Тип ИИ ('weak_ai' или 'strong_ai')
+            field_size: Размер игрового поля
+            ship_config: Конфигурация кораблей
+            ship_placement: Способ расстановки кораблей (0 - ручной, 1 - автоматический)
+        """
         self.field_size = field_size
         self.ship_config = ship_config
         self.field = draw_Field(field_size)
@@ -21,18 +43,19 @@ class game_with_computer:
         self.ai.set_field_size(field_size)
 
         # Наборы доступных выстрелов
-        self.available_to_fire_set_computer = set(
-            (i, j) for i in range(1, field_size[0] + 1)
+        self.available_to_fire_set_computer: Set[Tuple[int, int]] = set(
+            (i, j)
+            for i in range(1, field_size[0] + 1)
             for j in range(1, field_size[1] + 1)
         )
 
         self.game_over = False
         self.computer_turn = False
-        self.winner = None
-        self.ship_placer = None
+        self.winner: Optional[str] = None
+        self.ship_placer: Optional[manual_ship_placer] = None
 
-    def start_game(self):
-        """Инициализация игры и расстановка кораблей"""
+    def start_game(self) -> None:
+        """Инициализация игры и расстановка кораблей."""
         self.field.draw_field_grid()
         self.field.sign_grids()
 
@@ -47,26 +70,32 @@ class game_with_computer:
         else:  # Ручная расстановка
             self.start_manual_placement()
 
-    def start_normal_game(self):
-        player_offset = LEFT_RIGHT_MARGIN + self.field_size[1] * BLOCK_SIZE + 10 * BLOCK_SIZE
+    def start_normal_game(self) -> None:
+        """Начинает основную фазу игры после расстановки кораблей."""
+        player_offset = (
+            LEFT_RIGHT_MARGIN + self.field_size[1] * BLOCK_SIZE + 10 * BLOCK_SIZE
+        )
         self.field.draw_ships(self.player.list_of_game_ships, player_offset)
-        #self.field.draw_ships(self.computer.list_of_game_ships, LEFT_RIGHT_MARGIN)
         pygame.display.update()
 
-    def start_manual_placement(self):
-        """Начинает процесс ручной расстановки кораблей"""
-        offset = (LEFT_RIGHT_MARGIN + self.field_size[1] * BLOCK_SIZE + 10 * BLOCK_SIZE,
-                  UPPER_MARGIN)
+    def start_manual_placement(self) -> None:
+        """Начинает процесс ручной расстановки кораблей."""
+        offset = (
+            LEFT_RIGHT_MARGIN + self.field_size[1] * BLOCK_SIZE + 10 * BLOCK_SIZE,
+            UPPER_MARGIN,
+        )
         self.ship_placer = manual_ship_placer(
-            self.field_size,
-            self.ship_config,
-            offset,
-            self.field.screen.get_width()
+            self.field_size, self.ship_config, offset, self.field.screen.get_width()
         )
         self.draw_setup_screen()
 
-    def handle_setup_event(self, event):
-        """Обрабатывает события во время фазы расстановки"""
+    def handle_setup_event(self, event: pygame.event.Event) -> None:
+        """
+        Обрабатывает события во время фазы расстановки.
+
+        Args:
+            event: Событие pygame для обработки
+        """
         if event.type == pygame.QUIT:
             self.game_over = True
             return
@@ -81,8 +110,8 @@ class game_with_computer:
             self.ship_placement = 1
             self.start_normal_game()
 
-    def draw_setup_screen(self):
-        """Отрисовывает экран во время фазы расстановки"""
+    def draw_setup_screen(self) -> None:
+        """Отрисовывает экран во время фазы расстановки."""
         self.field.screen.fill(WHITE)
         self.field.draw_field_grid()
         self.field.sign_grids()
@@ -93,8 +122,13 @@ class game_with_computer:
             self.ship_placer.draw_ship_info(self.field.screen)
         pygame.display.update()
 
-    def handle_player_turn(self, event):
-        """Обрабатывает ход игрока"""
+    def handle_player_turn(self, event: pygame.event.Event) -> None:
+        """
+        Обрабатывает ход игрока.
+
+        Args:
+            event: Событие pygame для обработки
+        """
         x, y = event.pos
         field_right = LEFT_RIGHT_MARGIN + self.field_size[1] * BLOCK_SIZE
         field_bottom = UPPER_MARGIN + self.field_size[0] * BLOCK_SIZE
@@ -108,16 +142,28 @@ class game_with_computer:
                 self.available_to_fire_set_computer.discard(fired_block)
                 self.process_shot(fired_block, self.computer, LEFT_RIGHT_MARGIN)
 
-    def handle_computer_turn(self):
-        """Обрабатывает ход компьютера"""
+    def handle_computer_turn(self) -> None:
+        """Обрабатывает ход компьютера."""
         fired_block, success = self.ai.make_shot(self.player.list_alive_ships)
-        self.process_shot(fired_block, self.player,
-                          LEFT_RIGHT_MARGIN + self.field_size[1] * BLOCK_SIZE + 10 * BLOCK_SIZE)
+        self.process_shot(
+            fired_block,
+            self.player,
+            LEFT_RIGHT_MARGIN + self.field_size[1] * BLOCK_SIZE + 10 * BLOCK_SIZE,
+        )
         if not success:
             self.computer_turn = False
 
-    def process_shot(self, fired_block, target, offset):
-        """Обрабатывает результат выстрела"""
+    def process_shot(
+        self, fired_block: Tuple[int, int], target: "ships_on_grid", offset: int
+    ) -> None:
+        """
+        Обрабатывает результат выстрела.
+
+        Args:
+            fired_block: Координаты выстрела (строка, столбец)
+            target: Цель выстрела (игрок или компьютер)
+            offset: Смещение по оси X для отрисовки
+        """
         success = any(fired_block in ship.cells for ship in target.list_alive_ships)
         self.field.draw_after_shot(fired_block, offset, success)
 
@@ -129,8 +175,17 @@ class game_with_computer:
         else:
             self.computer_turn = target == self.computer
 
-    def handle_successful_shot(self, fired_block, target, offset):
-        """Обрабатывает успешное попадание"""
+    def handle_successful_shot(
+        self, fired_block: Tuple[int, int], target: "ships_on_grid", offset: int
+    ) -> None:
+        """
+        Обрабатывает успешное попадание.
+
+        Args:
+            fired_block: Координаты выстрела (строка, столбец)
+            target: Цель выстрела (игрок или компьютер)
+            offset: Смещение по оси X для отрисовки
+        """
         for ship in target.list_alive_ships:
             if fired_block in ship.cells:
                 ship.cells.remove(fired_block)
@@ -143,17 +198,25 @@ class game_with_computer:
                         self.ai.delete_area_destroyed_ship(destroyed_ship)
                     target.list_alive_ships.remove(ship)
 
-    def mark_destroyed_ship_area(self, ship):
-        """Помечает область вокруг уничтоженного корабля"""
+    def mark_destroyed_ship_area(self, ship: "Ship") -> None:
+        """
+        Помечает область вокруг уничтоженного корабля.
+
+        Args:
+            ship: Уничтоженный корабль
+        """
         for cell in ship.cells:
             row, col = cell
             for i in range(-1, 2):
                 for j in range(-1, 2):
-                    if 1 <= row + i <= self.field_size[0] and 1 <= col + j <= self.field_size[1]:
+                    if (
+                        1 <= row + i <= self.field_size[0]
+                        and 1 <= col + j <= self.field_size[1]
+                    ):
                         self.available_to_fire_set_computer.discard((row + i, col + j))
 
-    def run(self):
-        """Основной игровой цикл"""
+    def run(self) -> None:
+        """Основной игровой цикл."""
         self.start_game()
 
         while not self.game_over:
@@ -173,7 +236,6 @@ class game_with_computer:
         self.end_game()
         pygame.quit()
 
-    def end_game(self):
-        """Отображает результат игры"""
+    def end_game(self) -> None:
+        """Отображает результат игры."""
         print(f"Game over! Winner: {self.winner}")
-        # Можно добавить отображение результата на экране
