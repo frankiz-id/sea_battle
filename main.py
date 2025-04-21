@@ -1,6 +1,8 @@
 from game_with_computer import game_with_computer
 from game_with_friend import game_with_friend
 from main_menu import main_menu
+from enums import AIType, GameMode
+from typing import Union
 
 
 def main() -> None:
@@ -10,15 +12,18 @@ def main() -> None:
     """
     menu = main_menu()
     game_mode, ship_placement, field_size, ship_config = menu.run()
-    if game_mode == "weak_ai":
+
+    cur_game: Union[game_with_computer, game_with_friend]
+
+    if game_mode == GameMode.WEAK_AI:
         cur_game = game_with_computer(
-            "weak_ai", field_size, ship_config, ship_placement
+            AIType.WEAK, field_size, ship_config, ship_placement
         )
-    elif game_mode == "strong_ai":
+    elif game_mode == GameMode.STRONG_AI:
         cur_game = game_with_computer(
-            "strong_ai", field_size, ship_config, ship_placement
+            AIType.STRONG, field_size, ship_config, ship_placement
         )
-    elif game_mode == "friend":
+    elif game_mode == GameMode.FRIEND:
         cur_game = game_with_friend(field_size, ship_config, ship_placement)
     cur_game.run()
 

@@ -1,7 +1,8 @@
 import random
-from typing import List, Optional, Set, Tuple
+from typing import List, Set, Tuple, Optional
 
-from Ship import Ship
+from ships_ import Ship
+from enums import ShipOrientation
 
 
 class computerAI:
@@ -95,35 +96,38 @@ class computerAI:
         x2, y2 = self.hits[-1]
 
         if x1 == x2:
-            self.direction = "vertical"
+            self.direction = ShipOrientation.VERTICAL
         elif y1 == y2:
-            self.direction = "horizontal"
+            self.direction = ShipOrientation.HORIZONTAL
         self.filter_target_stack()
 
     def filter_target_stack(self) -> None:
         """Фильтрует возможные цели в зависимости от направления корабля."""
-        if self.direction == "horizontal":
-            self.target_stack = [
-                cell for cell in self.target_stack if cell[1] == self.last_hit[1]
-            ]
-        elif self.direction == "vertical":
-            self.target_stack = [
-                cell for cell in self.target_stack if cell[0] == self.last_hit[0]
-            ]
+        if self.last_hit:
+            if self.direction == ShipOrientation.HORIZONTAL:
+                self.target_stack = [
+                    cell for cell in self.target_stack if cell[1] == self.last_hit[1]
+                ]
+            elif self.direction == ShipOrientation.VERTICAL:
+                self.target_stack = [
+                    cell for cell in self.target_stack if cell[0] == self.last_hit[0]
+                ]
 
     def generate_target_stack(self) -> None:
         """Генерирует возможные цели вокруг последнего попадания."""
-        x, y = self.last_hit
-        if self.direction is None:
-            directions = [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
-        elif self.direction == "horizontal":
-            directions = [(x + 1, y), (x - 1, y)]
-        elif self.direction == "vertical":
-            directions = [(x, y + 1), (x, y - 1)]
+        if self.last_hit:
+            x, y = self.last_hit
+            directions = list()
+            if self.direction is None:
+                directions = [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
+            elif self.direction == ShipOrientation.HORIZONTAL:
+                directions = [(x + 1, y), (x - 1, y)]
+            elif self.direction == ShipOrientation.VERTICAL:
+                directions = [(x, y + 1), (x, y - 1)]
 
-        for cell in directions:
-            if cell in self.available_shots and cell not in self.target_stack:
-                self.target_stack.append(cell)
+            for cell in directions:
+                if cell in self.available_shots and cell not in self.target_stack:
+                    self.target_stack.append(cell)
 
     def is_ship_destroyed(self, player_ships: List["Ship"]) -> bool:
         """

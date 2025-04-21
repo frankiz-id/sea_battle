@@ -1,8 +1,10 @@
 from typing import Dict, List, Optional, Tuple
 
 import pygame
+from anyio.abc import value
 
-from draw_Field import BLACK, FONT, WHITE, draw_Field
+from draw_field import FONT, draw_Field
+from enums import Color, GameMode
 
 # Константы для улучшения читаемости
 MENU_OPTIONS = {
@@ -44,18 +46,14 @@ help_lines = [
     "",
     "3. Особенности игры при выборе manual(ручной) расстановки кораблей в настройках:",
     "1-4 - выбор размера корабля, который хотите установить",
-    "ЛКМ - выбор клетки для размещения корабля. Выбирайте клетки до тех пор, пока не разместите весь корабль",
-    (
-        "Если во время размещения вы поймете, что корабль не помещается "
-        "на выбранное место или вы передумали с расстановкой, "
-        "повторно нажмите 1-4 для выбора размера и начните установку заново"
-    ),
-]
 
-HELP_BACKGROUND = (240, 240, 240)  # Светло-серый цвет фона справки
-HELP_TEXT_COLOR = (0, 0, 0)  # Черный цвет текста
-BACK_BUTTON_COLOR = (180, 180, 180)  # Цвет кнопки "Назад"
-BACK_BUTTON_HOVER = (200, 200, 200)  # Цвет кнопки "Назад" при наведении
+    "ЛКМ - выбор клетки для размещения корабля. Выбирайте клетки до тех пор, ",
+    "пока не разместите весь корабль",
+
+    "Если во время размещения вы поймете, что корабль не помещается ",
+    "на выбранное место или вы передумали с расстановкой, ",
+    "повторно нажмите 1-4 для выбора размера и начните установку заново"
+]
 
 SHIP_TYPES = ["4-deck ship", "3-deck ship", "2-deck ship", "1-deck ship"]
 SHIP_SIZES = [4, 3, 2, 1]
@@ -71,7 +69,7 @@ class main_menu:
         """Инициализация главного меню."""
         pygame.init()
         self.screen = pygame.display.set_mode(draw_Field().get_screen_size())
-        self.screen.fill(WHITE)
+        self.screen.fill(Color.WHITE.value)
         self.font = FONT
         self.game_mode: Optional[str] = None
         self.field_size_in_blocks: Tuple[int, int] = (10, 10)
@@ -79,7 +77,7 @@ class main_menu:
         self.temp_ship_counts: List[int] = [0, 0, 0, 0]
         self.plus_buttons: List[pygame.Rect] = []
         self.minus_buttons: List[pygame.Rect] = []
-        self.error_message: Optional[str] = None
+        self.error_message: str = ""
         self.error_time: int = 0
         self.number_free_cells: int = (
             self.field_size_in_blocks[0] * self.field_size_in_blocks[1]
@@ -92,15 +90,15 @@ class main_menu:
         self.help_scroll_y: int = 0
 
     def draw_text(
-        self, text: str, x: int, y: int, color: Tuple[int, int, int] = BLACK
+        self, text: str, x: int, y: int, color: Color = Color.BLACK.value
     ) -> None:
         """
         Отрисовывает текст на экране.
 
         Args:
             text: Текст для отрисовки
-            x: Координата X
-            y: Координата Y
+            x: Координата по X
+            y: Координата по Y
             color: Цвет текста
         """
         text_surface = self.font.render(text, False, color)
@@ -133,7 +131,7 @@ class main_menu:
 
     def draw_help_screen(self) -> None:
         """Отрисовывает экран справки."""
-        self.screen.fill(HELP_BACKGROUND)
+        self.screen.fill(Color.LIGHT_GRAY.value)
 
         # Инициализация параметров прокрутки
         if not hasattr(self, "help_scroll_y"):
@@ -142,12 +140,12 @@ class main_menu:
 
         # Создаем поверхность для контента
         content_surface = pygame.Surface((self.screen.get_width(), self.content_height))
-        content_surface.fill(HELP_BACKGROUND)
+        content_surface.fill(Color.LIGHT_GRAY.value)
 
         # Отрисовка текста на content_surface
         y_pos = 20
         for line in help_lines:
-            text = self.font.render(line, True, HELP_TEXT_COLOR)
+            text = self.font.render(line, True, Color.BLACK.value)
             content_surface.blit(text, (50, y_pos))
             y_pos += 30
 
@@ -158,8 +156,8 @@ class main_menu:
         back_button = pygame.Rect(
             self.screen.get_width() // 2 - 100, self.screen.get_height() - 80, 200, 50
         )
-        pygame.draw.rect(self.screen, BACK_BUTTON_COLOR, back_button)
-        back_text = self.font.render("Назад", True, BLACK)
+        pygame.draw.rect(self.screen, Color.PALE_GRAY.value, back_button)
+        back_text = self.font.render("Назад", True, Color.BLACK.value)
         self.screen.blit(
             back_text,
             (
@@ -205,7 +203,7 @@ class main_menu:
 
     def draw_main_menu(self) -> None:
         """Отрисовывает главное меню."""
-        self.screen.fill(WHITE)
+        self.screen.fill(Color.WHITE.value)
         y_position = 100
         for option in MENU_OPTIONS.values():
             self.draw_text(option, 100, y_position)
@@ -235,13 +233,13 @@ class main_menu:
             else:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_1:
-                        self.game_mode = "weak_ai"
+                        self.game_mode = GameMode.WEAK_AI
                         return False
                     elif event.key == pygame.K_2:
-                        self.game_mode = "strong_ai"
+                        self.game_mode = GameMode.STRONG_AI
                         return False
                     elif event.key == pygame.K_3:
-                        self.game_mode = "friend"
+                        self.game_mode = GameMode.FRIEND
                         return False
                     elif event.key == pygame.K_4:
                         self.show_settings(0)
@@ -253,7 +251,7 @@ class main_menu:
 
     def show_settings(self, selected_option: int) -> None:
         """
-        Отображает меню настроек.
+        Следит за тем, отображать меню настроек или нет.
 
         Args:
             selected_option: Индекс выбранной опции
@@ -273,7 +271,7 @@ class main_menu:
         Args:
             selected_option: Индекс выбранной опции
         """
-        self.screen.fill(WHITE)
+        self.screen.fill(Color.WHITE.value)
         for i, option in enumerate(SETTINGS_OPTIONS):
             text = option
             if i == 0:
@@ -283,7 +281,7 @@ class main_menu:
                     text += PLACEMENT_OPTIONS[self.ship_placement]
                 elif self.ship_placement == 0:
                     text += PLACEMENT_OPTIONS[self.ship_placement]
-            color = BLACK if i == selected_option else (128, 128, 128)
+            color = Color.BLACK.value if i == selected_option else Color.MEDIUM_GRAY.value
             self.draw_text(text, 100, 100 + i * 50, color)
         pygame.display.update()
 
@@ -295,7 +293,7 @@ class main_menu:
             selected_option: Индекс выбранной опции
 
         Returns:
-            Кортеж (продолжить работу, новый выбранный вариант)
+            Кортеж (продолжить работу или нет, новая выбранная опция)
         """
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -332,10 +330,10 @@ class main_menu:
         """
         new_size = self.get_user_input("Enter field size (6-16): ")
         if new_size:
-            new_size = int(new_size)
-            if MIN_FIELD_SIZE <= new_size <= MAX_FIELD_SIZE:
-                self.field_size_in_blocks = (new_size, new_size)
-                self.number_free_cells = new_size * new_size
+            new_size_field = int(new_size)
+            if MIN_FIELD_SIZE <= new_size_field <= MAX_FIELD_SIZE:
+                self.field_size_in_blocks = (new_size_field, new_size_field)
+                self.number_free_cells = new_size_field * new_size_field
                 self.ship_config = [1]
                 self.temp_ship_counts = [0, 0, 0, 1]
                 return True
@@ -377,7 +375,7 @@ class main_menu:
 
     def draw_ship_configuration(self) -> None:
         """Отрисовывает экран конфигурации кораблей."""
-        self.screen.fill(WHITE)
+        self.screen.fill(Color.WHITE.value)
         self.draw_configuration_header()
         self.draw_ship_controls()
         self.draw_action_buttons()
@@ -392,7 +390,7 @@ class main_menu:
             hasattr(self, "error_message")
             and pygame.time.get_ticks() - self.error_time < 5000
         ):
-            self.draw_text(self.error_message, 100, 80, (255, 0, 0))
+            self.draw_text(self.error_message, 100, 80, Color.RED.value)
 
     def draw_ship_controls(self) -> None:
         """Отрисовывает элементы управления конфигурацией кораблей."""
@@ -437,11 +435,11 @@ class main_menu:
             y: Координата Y
         """
         minus_rect = pygame.Rect(minus_x, y, 30, 30)
-        pygame.draw.rect(self.screen, BLACK, minus_rect, 2)
+        pygame.draw.rect(self.screen, Color.BLACK.value, minus_rect, 2)
         self.draw_text("-", minus_x + 10, y)
 
         plus_rect = pygame.Rect(plus_x, y, 30, 30)
-        pygame.draw.rect(self.screen, BLACK, plus_rect, 2)
+        pygame.draw.rect(self.screen, Color.BLACK.value, plus_rect, 2)
         self.draw_text("+", plus_x + 10, y)
 
         if len(self.minus_buttons) <= index:
@@ -452,13 +450,13 @@ class main_menu:
             self.plus_buttons[index] = plus_rect
 
     def draw_action_buttons(self) -> None:
-        """Отрисовывает кнопки действий (подтвердить, сбросить)."""
+        """Отрисовывает кнопки действий для меню настройки конфигурации кораблей (подтвердить, сбросить)."""
         confirm_rect = pygame.Rect(100, 350, 200, 40)
-        pygame.draw.rect(self.screen, BLACK, confirm_rect, 2)
+        pygame.draw.rect(self.screen, Color.BLACK.value, confirm_rect, 2)
         self.draw_text("Confirm", 180, 360)
 
         reset_rect = pygame.Rect(100, 400, 200, 40)
-        pygame.draw.rect(self.screen, BLACK, reset_rect, 2)
+        pygame.draw.rect(self.screen, Color.BLACK.value, reset_rect, 2)
         self.draw_text("Reset to Default", 140, 410)
 
     def handle_ship_configuration_events(self) -> bool:
@@ -498,7 +496,7 @@ class main_menu:
 
     def handle_confirm_button(self, pos: Tuple[int, int]) -> bool:
         """
-        Обрабатывает нажатие кнопки подтверждения.
+        Обрабатывает нажатие кнопки подтверждения для меню изменения конфигурации.
 
         Args:
             pos: Позиция клика (x, y)
@@ -518,7 +516,7 @@ class main_menu:
 
     def handle_reset_button(self, pos: Tuple[int, int]) -> None:
         """
-        Обрабатывает нажатие кнопки сброса.
+        Обрабатывает нажатие кнопки сброса для меню изменения конфигурации.
 
         Args:
             pos: Позиция клика (x, y)
@@ -574,8 +572,8 @@ class main_menu:
             Введенный текст или None, если ввод отменен
         """
         input_box = pygame.Rect(100, 200, 140, 32)
-        color_inactive = pygame.Color("lightskyblue3")
-        color_active = pygame.Color("dodgerblue2")
+        color_inactive = Color.PALE_GRAY.value
+        color_active = Color.BLACK.value
         color = color_inactive
         active = False
         text = ""
@@ -593,10 +591,10 @@ class main_menu:
                         done = True
                     elif event.key == pygame.K_BACKSPACE:
                         text = text[:-1]
-                    else:
+                    elif pygame.K_0 <= event.key <= pygame.K_9:
                         text += event.unicode
 
-            self.screen.fill(WHITE)
+            self.screen.fill(Color.WHITE.value)
             txt_surface = self.font.render(prompt + text, True, color)
             width = max(200, txt_surface.get_width() + 10)
             input_box.w = width

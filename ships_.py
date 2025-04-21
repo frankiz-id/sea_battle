@@ -1,10 +1,11 @@
 from typing import List, Tuple
+from enums import ShipOrientation
 
 
 class Ship:
     """Класс для представления корабля в игре."""
 
-    def __init__(self, cells: List[Tuple[int, int]], orientation: str) -> None:
+    def __init__(self, cells: List[Tuple[int, int]], orientation: ShipOrientation) -> None:
         """
         Инициализация корабля.
 
@@ -13,5 +14,5 @@ class Ship:
             orientation: Ориентация корабля ('horizontal' или 'vertical')
         """
         self.cells: List[Tuple[int, int]] = cells
-        self.orientation: str = orientation
+        self.orientation: ShipOrientation = orientation
         self.destroyed: bool = False

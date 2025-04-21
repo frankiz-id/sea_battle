@@ -1,17 +1,17 @@
 from typing import List, Optional, Set, Tuple
 
+from enums import type_player, Color
+
 import pygame
 
-from draw_Field import (
-    BLACK,
+from draw_field import (
     BLOCK_SIZE,
     LEFT_RIGHT_MARGIN,
     UPPER_MARGIN,
-    WHITE,
     draw_Field,
 )
 from manual_ship_placer import manual_ship_placer
-from Ship import Ship
+from ships_ import Ship
 from ships_on_grid import ships_on_grid
 
 
@@ -19,7 +19,10 @@ class game_with_friend:
     """Класс для управления игрой против друга."""
 
     def __init__(
-        self, field_size: Tuple[int, int], ship_config: List[int], ship_placement: int
+        self,
+        field_size: Tuple[int, int],
+        ship_config: List[int],
+        ship_placement: int
     ) -> None:
         """
         Инициализация игры против друга.
@@ -45,7 +48,6 @@ class game_with_friend:
 
         # Текущий игрок (1 или 2)
         self.current_player = 1
-        self.game_over = False
 
         # Множества выстрелов и попаданий
         self.player1_shots: Set[Tuple[int, int]] = (
@@ -95,6 +97,9 @@ class game_with_friend:
             self.game_over = True
             return
 
+        if self.ship_placer is None:
+            return
+
         if event.type == pygame.KEYDOWN and self.setup_phase:
             # Обработка выбора типа корабля (1-4)
             if pygame.K_1 <= event.key <= pygame.K_4:
@@ -140,26 +145,27 @@ class game_with_friend:
 
     def switch_setup_player(self) -> None:
         """Переключение между игроками при ручной расстановке."""
-        if self.current_setup_player == 1:
-            # Сохраняем корабли для игрока 1
-            self.player1.create_lots_of_game_ships_manual(self.ship_placer.placed_ships)
-            self.player1.create_list_alive_ships()
-            # Переключаем на игрока 2
-            self.current_setup_player = 2
-            self.start_manual_placement()
-        else:
-            # Сохраняем корабли для игрока 2
-            self.player2.create_lots_of_game_ships_manual(self.ship_placer.placed_ships)
-            self.player2.create_list_alive_ships()
-            # Завершаем фазу расстановки
-            self.setup_phase = False
-            self.current_player = 1
+        if self.ship_placer is not None:
+            if self.current_setup_player == 1:
+                # Сохраняем корабли для игрока 1
+                self.player1.create_lots_of_game_ships_manual(self.ship_placer.placed_ships)
+                self.player1.create_list_alive_ships()
+                # Переключаем на игрока 2
+                self.current_setup_player = 2
+                self.start_manual_placement()
+            else:
+                # Сохраняем корабли для игрока 2
+                self.player2.create_lots_of_game_ships_manual(self.ship_placer.placed_ships)
+                self.player2.create_list_alive_ships()
+                # Завершаем фазу расстановки
+                self.setup_phase = False
+                self.current_player = 1
 
     def draw_setup_screen(self) -> None:
         """Отрисовывает экран во время фазы расстановки."""
-        self.field.screen.fill(WHITE)
+        self.field.screen.fill(Color.WHITE.value)
         self.field.draw_field_grid()
-        self.field.sign_grids("Player", 1)
+        self.field.sign_grids(type_player.PLAYER, 1)
 
         # Отрисовка процесса расстановки
         if self.ship_placer:
@@ -169,7 +175,7 @@ class game_with_friend:
         # Подпись текущего игрока
         font = pygame.font.SysFont("Arial", 30)
         text = f"Игрок {self.current_setup_player} размещает корабли"
-        text_surface = font.render(text, True, BLACK)
+        text_surface = font.render(text, True, Color.BLACK.value)
         self.field.screen.blit(
             text_surface,
             (self.field.screen.get_width() // 2 - text_surface.get_width() // 2, 10),
@@ -179,18 +185,18 @@ class game_with_friend:
 
     def draw_game_state(self) -> None:
         """Отрисовка текущего состояния игры."""
-        self.field.screen.fill(WHITE)
+        self.field.screen.fill(Color.WHITE.value)
         self.field.draw_field_grid()
-        self.field.sign_grids("Player")
+        self.field.sign_grids(type_player.PLAYER)
 
         # Подписи полей
         font = pygame.font.SysFont("Arial", 20)
         if self.ship_placement == 1:  # Автоматическая расстановка
-            enemy_text = font.render("Enemy Field", True, BLACK)
-            your_text = font.render("Your Field", True, BLACK)
+            enemy_text = font.render("Enemy Field", True, Color.BLACK.value)
+            your_text = font.render("Your Field", True, Color.BLACK.value)
         else:  # Ручная расстановка - без подписей полей
-            enemy_text = font.render("", True, BLACK)
-            your_text = font.render("", True, BLACK)
+            enemy_text = font.render("", True, Color.BLACK.value)
+            your_text = font.render("", True, Color.BLACK.value)
 
         if self.current_player == 1:
             # Для игрока 1 левое поле - поле игрока 2 (корабли не видны)
@@ -247,7 +253,7 @@ class game_with_friend:
 
         # Отображение текущего игрока
         turn_font = pygame.font.SysFont("Arial", 30)
-        turn_text = turn_font.render(f"Ход игрока {self.current_player}", True, BLACK)
+        turn_text = turn_font.render(f"Ход игрока {self.current_player}", True, Color.BLACK.value)
         self.field.screen.blit(
             turn_text,
             (self.field.screen.get_width() // 2 - turn_text.get_width() // 2, 10),
@@ -313,17 +319,17 @@ class game_with_friend:
             # Красный кружок для попадания
             pygame.draw.circle(
                 self.field.screen,
-                (255, 0, 0),
+                Color.RED.value,
                 (x + BLOCK_SIZE // 2, y + BLOCK_SIZE // 2),
                 BLOCK_SIZE // 3,
             )
         else:
             # Крестик для промаха
             pygame.draw.line(
-                self.field.screen, BLACK, (x, y), (x + BLOCK_SIZE, y + BLOCK_SIZE), 2
+                self.field.screen, Color.BLACK.value, (x, y), (x + BLOCK_SIZE, y + BLOCK_SIZE), 2
             )
             pygame.draw.line(
-                self.field.screen, BLACK, (x + BLOCK_SIZE, y), (x, y + BLOCK_SIZE), 2
+                self.field.screen, Color.BLACK.value, (x + BLOCK_SIZE, y), (x, y + BLOCK_SIZE), 2
             )
 
     def handle_turn(self, event: pygame.event.Event) -> None:
@@ -398,12 +404,13 @@ class game_with_friend:
 
                 if not ship.cells:  # Корабль уничтожен
                     destroyed_ship = target.find_ship_by_cell(fired_block)
-                    self.mark_destroyed_ship(destroyed_ship, shots_set)
-                    target.list_alive_ships.remove(ship)
+                    if destroyed_ship is not None:
+                        self.mark_destroyed_ship(destroyed_ship, shots_set)
+                        target.list_alive_ships.remove(ship)
 
-                    if not target.list_alive_ships:
-                        self.game_over = True
-                        self.winner = 1 if target == self.player2 else 2
+                        if not target.list_alive_ships:
+                            self.game_over = True
+                            self.winner = 1 if target == self.player2 else 2
                 break
 
     def mark_destroyed_ship(
@@ -432,7 +439,7 @@ class game_with_friend:
     def show_game_result(self) -> None:
         """Отображение результата игры."""
         font = pygame.font.SysFont("Arial", 40)
-        result_text = font.render(f"Игрок {self.winner} победил!", True, BLACK)
+        result_text = font.render(f"Игрок {self.winner} победил!", True, Color.BLACK.value)
         text_rect = result_text.get_rect(
             center=(
                 self.field.screen.get_width() // 2,
@@ -440,7 +447,7 @@ class game_with_friend:
             )
         )
 
-        self.field.screen.fill(WHITE)
+        self.field.screen.fill(Color.WHITE.value)
         self.field.screen.blit(result_text, text_rect)
         pygame.display.update()
 

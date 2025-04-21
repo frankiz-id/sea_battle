@@ -2,22 +2,18 @@ from typing import List, Tuple
 
 import pygame
 
-from Ship import Ship
+from ships_ import Ship
+from enums import Color, type_player
 
 pygame.init()
 pygame.display.set_caption("Морской бой")
-
-# Цвета
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-GRAY = (200, 200, 200)
 
 # Константы
 BLOCK_SIZE = 30
 LEFT_RIGHT_MARGIN = 50
 UPPER_MARGIN = 40
-FONT_SIZE = int(BLOCK_SIZE / 1.5)
-FONT = pygame.font.SysFont("notosans", FONT_SIZE)
+FONT_SIZE = int(BLOCK_SIZE / 1.6)
+FONT = pygame.font.SysFont("Verdana", FONT_SIZE)
 
 
 class draw_Field:
@@ -37,7 +33,7 @@ class draw_Field:
         )
         self.screen_height = UPPER_MARGIN + field_size[0] * BLOCK_SIZE + 150
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
-        self.screen.fill(WHITE)
+        self.screen.fill(Color.WHITE.value)
 
     def get_screen_size(self) -> Tuple[int, int]:
         """
@@ -80,7 +76,7 @@ class draw_Field:
             for i in range(self.field_size[0] + 1):
                 pygame.draw.line(
                     self.screen,
-                    BLACK,
+                    Color.BLACK.value,
                     (offset_x, UPPER_MARGIN + i * BLOCK_SIZE),
                     (
                         offset_x + self.field_size[1] * BLOCK_SIZE,
@@ -92,7 +88,7 @@ class draw_Field:
             for i in range(self.field_size[1] + 1):
                 pygame.draw.line(
                     self.screen,
-                    BLACK,
+                    Color.BLACK.value,
                     (offset_x + i * BLOCK_SIZE, UPPER_MARGIN),
                     (
                         offset_x + i * BLOCK_SIZE,
@@ -103,7 +99,7 @@ class draw_Field:
 
             # Разметка координат
             for i in range(self.field_size[0]):
-                num_ver = FONT.render(str(i + 1), True, BLACK)
+                num_ver = FONT.render(str(i + 1), True, Color.BLACK.value)
                 self.screen.blit(
                     num_ver,
                     (
@@ -115,7 +111,7 @@ class draw_Field:
                 )
 
             for i in range(self.field_size[1]):
-                letter = FONT.render(letters[i], True, BLACK)
+                letter = FONT.render(letters[i], True, Color.BLACK.value)
                 self.screen.blit(
                     letter,
                     (
@@ -127,7 +123,7 @@ class draw_Field:
                 )
 
     def sign_grids(
-        self, mode: str = "Computer", draw_captions_when_playing_with_friend: int = 0
+        self, mode: type_player = type_player.COMPUTER, draw_captions_when_playing_with_friend: int = 0
     ) -> None:
         """
         Подписывает игровые поля (имена игроков или компьютера).
@@ -136,15 +132,15 @@ class draw_Field:
             mode: Режим игры ('Computer' или 'Player')
             draw_captions_when_playing_with_friend: Флаг отображения подписей при игре с другом
         """
-        if mode == "Computer":
-            player1 = FONT.render("Computer", True, BLACK)
-            player2 = FONT.render("Player", True, BLACK)
+        if mode == type_player.COMPUTER:
+            player1 = FONT.render("Computer", True, Color.BLACK.value)
+            player2 = FONT.render("Player", True, Color.BLACK.value)
         elif draw_captions_when_playing_with_friend:
-            player1 = FONT.render("Player 1", True, BLACK)
-            player2 = FONT.render("Player 2", True, BLACK)
+            player1 = FONT.render("Player 1", True, Color.BLACK.value)
+            player2 = FONT.render("Player 2", True, Color.BLACK.value)
         else:
-            player1 = FONT.render("", True, BLACK)
-            player2 = FONT.render("", True, BLACK)
+            player1 = FONT.render("", True, Color.BLACK.value)
+            player2 = FONT.render("", True, Color.BLACK.value)
 
         # Подписи для обоих полей
         self.screen.blit(
@@ -182,7 +178,7 @@ class draw_Field:
                 rect_x = offset_x + (col - 1) * BLOCK_SIZE
                 rect_y = UPPER_MARGIN + (row - 1) * BLOCK_SIZE
                 pygame.draw.rect(
-                    self.screen, BLACK, (rect_x, rect_y, BLOCK_SIZE, BLOCK_SIZE), 3
+                    self.screen, Color.BLACK.value, (rect_x, rect_y, BLOCK_SIZE, BLOCK_SIZE), 3
                 )
 
     def draw_after_shot(
@@ -202,13 +198,13 @@ class draw_Field:
 
         # Рисуем крестик
         pygame.draw.line(
-            self.screen, BLACK, (x, y), (x + BLOCK_SIZE, y + BLOCK_SIZE), 2
+            self.screen, Color.BLACK.value, (x, y), (x + BLOCK_SIZE, y + BLOCK_SIZE), 2
         )
         pygame.draw.line(
-            self.screen, BLACK, (x + BLOCK_SIZE, y), (x, y + BLOCK_SIZE), 2
+            self.screen, Color.BLACK.value, (x + BLOCK_SIZE, y), (x, y + BLOCK_SIZE), 2
         )
         if success:
-            pygame.draw.rect(self.screen, BLACK, (x, y, BLOCK_SIZE, BLOCK_SIZE), 3)
+            pygame.draw.rect(self.screen, Color.BLACK.value, (x, y, BLOCK_SIZE, BLOCK_SIZE), 3)
 
     def draw_destroyed_area(self, ship: "Ship", offset_x: int) -> None:
         """
@@ -230,14 +226,14 @@ class draw_Field:
                         y = UPPER_MARGIN + (row + i - 1) * BLOCK_SIZE
                         pygame.draw.line(
                             self.screen,
-                            BLACK,
+                            Color.BLACK.value,
                             (x, y),
                             (x + BLOCK_SIZE, y + BLOCK_SIZE),
                             1,
                         )
                         pygame.draw.line(
                             self.screen,
-                            BLACK,
+                            Color.BLACK.value,
                             (x + BLOCK_SIZE, y),
                             (x, y + BLOCK_SIZE),
                             1,

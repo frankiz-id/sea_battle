@@ -1,8 +1,8 @@
 import random
 from typing import Set, Tuple
 
-from computerAI import computerAI
-from Ship import Ship
+from computer_ai import computerAI
+from ships_ import Ship
 
 
 class computerAI_advanced(computerAI):

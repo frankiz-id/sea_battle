@@ -2,7 +2,8 @@ import copy
 import random
 from typing import Dict, List, Optional, Set, Tuple
 
-from Ship import Ship
+from ships_ import Ship
+from enums import ShipOrientation
 
 
 class ships_on_grid:
@@ -102,7 +103,7 @@ class ships_on_grid:
             if self.is_correct_place(new_ship):
                 self.reserve_ship_area(new_ship)
                 return Ship(
-                    new_ship, "horizontal" if horizontal_or_vertical else "vertical"
+                    new_ship, ShipOrientation.HORIZONTAL if horizontal_or_vertical else ShipOrientation.VERTICAL
                 )
 
     def reserve_ship_area(self, ship_cells: List[Tuple[int, int]]) -> None:

@@ -2,20 +2,21 @@ from typing import List, Optional, Set, Tuple
 
 import pygame
 
-from computerAI import computerAI
-from computerAI_advanced import computerAI_advanced
-from draw_Field import BLOCK_SIZE, LEFT_RIGHT_MARGIN, UPPER_MARGIN, WHITE, draw_Field
+from computer_ai import computerAI
+from computer_ai_advanced import computerAI_advanced
+from draw_field import BLOCK_SIZE, LEFT_RIGHT_MARGIN, UPPER_MARGIN, draw_Field
 from manual_ship_placer import manual_ship_placer
-from Ship import Ship
+from ships_ import Ship
 from ships_on_grid import ships_on_grid
+from enums import AIType, Color, type_player
 
 
 class game_with_computer:
-    """Класс для управления игрой против компьютера."""
+    """Класс для управления логикой игры против компьютера."""
 
     def __init__(
         self,
-        ai_type: str,
+        ai_type: AIType,
         field_size: Tuple[int, int],
         ship_config: List[int],
         ship_placement: int,
@@ -39,7 +40,7 @@ class game_with_computer:
         self.computer = ships_on_grid(field_size, ship_config)
 
         # Инициализация ИИ
-        self.ai = computerAI() if ai_type == "weak_ai" else computerAI_advanced()
+        self.ai = computerAI() if ai_type == AIType.WEAK else computerAI_advanced()
         self.ai.set_field_size(field_size)
 
         # Наборы доступных выстрелов
@@ -55,7 +56,7 @@ class game_with_computer:
         self.ship_placer: Optional[manual_ship_placer] = None
 
     def start_game(self) -> None:
-        """Инициализация игры и расстановка кораблей."""
+        """Отрисовка полей и расстановка кораблей."""
         self.field.draw_field_grid()
         self.field.sign_grids()
 
@@ -100,6 +101,9 @@ class game_with_computer:
             self.game_over = True
             return
 
+        if self.ship_placer is None:
+            return
+
         self.ship_placer.handle_event(event, self.field.screen)
         self.draw_setup_screen()
 
@@ -112,7 +116,7 @@ class game_with_computer:
 
     def draw_setup_screen(self) -> None:
         """Отрисовывает экран во время фазы расстановки."""
-        self.field.screen.fill(WHITE)
+        self.field.screen.fill(Color.WHITE.value)
         self.field.draw_field_grid()
         self.field.sign_grids()
 
@@ -171,7 +175,7 @@ class game_with_computer:
             self.handle_successful_shot(fired_block, target, offset)
             if not target.list_alive_ships:
                 self.game_over = True
-                self.winner = "Player" if target == self.computer else "Computer"
+                self.winner = type_player.PLAYER.value if target == self.computer else type_player.COMPUTER.value
         else:
             self.computer_turn = target == self.computer
 
@@ -191,12 +195,13 @@ class game_with_computer:
                 ship.cells.remove(fired_block)
                 if not ship.cells:  # Корабль уничтожен
                     destroyed_ship = target.find_ship_by_cell(fired_block)
-                    self.field.draw_destroyed_area(destroyed_ship, offset)
-                    if target == self.computer:
-                        self.mark_destroyed_ship_area(destroyed_ship)
-                    else:
-                        self.ai.delete_area_destroyed_ship(destroyed_ship)
-                    target.list_alive_ships.remove(ship)
+                    if destroyed_ship is not None:
+                        self.field.draw_destroyed_area(destroyed_ship, offset)
+                        if target == self.computer:
+                            self.mark_destroyed_ship_area(destroyed_ship)
+                        else:
+                            self.ai.delete_area_destroyed_ship(destroyed_ship)
+                        target.list_alive_ships.remove(ship)
 
     def mark_destroyed_ship_area(self, ship: "Ship") -> None:
         """
