@@ -1,8 +1,7 @@
-from game_with_computer import game_with_computer
-from game_with_friend import game_with_friend
-from main_menu import main_menu
+from game_with_computer import GameWithComputer
+from game_with_friend import GameWithFriend
+from main_menu import MainMenu
 from enums import AIType, GameMode
-from typing import Union
 
 
 def main() -> None:
@@ -10,21 +9,21 @@ def main() -> None:
     Основная функция игры.
     Запускает главное меню и инициализирует выбранный режим игры.
     """
-    menu = main_menu()
+    menu = MainMenu()
     game_mode, ship_placement, field_size, ship_config = menu.run()
 
-    cur_game: Union[game_with_computer, game_with_friend]
+    cur_game: GameWithComputer | GameWithFriend
 
     if game_mode == GameMode.WEAK_AI:
-        cur_game = game_with_computer(
+        cur_game = GameWithComputer(
             AIType.WEAK, field_size, ship_config, ship_placement
         )
     elif game_mode == GameMode.STRONG_AI:
-        cur_game = game_with_computer(
+        cur_game = GameWithComputer(
             AIType.STRONG, field_size, ship_config, ship_placement
         )
     elif game_mode == GameMode.FRIEND:
-        cur_game = game_with_friend(field_size, ship_config, ship_placement)
+        cur_game = GameWithFriend(field_size, ship_config, ship_placement)
     cur_game.run()
 
 

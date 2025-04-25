@@ -1,22 +1,22 @@
 import random
-from typing import Set, Tuple
 
-from computer_ai import computerAI
-from ships_ import Ship
+from computer_ai import ComputerAI
+from ships import Ship
+from draw_field import FieldSize
 
 
-class computerAI_advanced(computerAI):
+class computerAIAdvanced(ComputerAI):
     """Класс для реализации продвинутого ИИ компьютера."""
 
     def __init__(self) -> None:
         """Инициализация продвинутого ИИ компьютера."""
         super().__init__()
-        self.set_available_cells_to_shots_while_four_ships: Set[Tuple[int, int]] = set()
-        self.set_available_cells_to_shots_while_three_and_two_ships: Set[
-            Tuple[int, int]
+        self.set_available_cells_to_shots_while_four_ships: set[tuple[int, int]] = set()
+        self.set_available_cells_to_shots_while_three_and_two_ships: set[
+            tuple[int, int]
         ] = set()
 
-    def set_field_size(self, size: Tuple[int, int]) -> None:
+    def set_field_size(self, size: FieldSize) -> None:
         """
         Устанавливает размер игрового поля и генерирует стратегические наборы.
 
@@ -37,7 +37,7 @@ class computerAI_advanced(computerAI):
 
     def generate_set_available_cells_to_shots(
         self, init_j: int
-    ) -> Set[Tuple[int, int]]:
+    ) -> set[tuple[int, int]]:
         """
         Генерирует множество клеток для стратегической стрельбы.
 
@@ -49,19 +49,19 @@ class computerAI_advanced(computerAI):
         """
         initial_i = 1
         initial_j = init_j
-        set_cells: Set[Tuple[int, int]] = set()
+        set_cells: set[tuple[int, int]] = set()
 
-        for _ in range(self.field_size[0]):
+        for _ in range(self._field_size.height):
             i = initial_i
             j = initial_j
-            while j <= self.field_size[1]:
+            while j <= self._field_size.width:
                 set_cells.add((i, j))
                 j += 4
             initial_i += 1
             initial_j = (initial_j - 1) if 2 <= initial_j <= 4 else 4
         return set_cells
 
-    def make_target(self) -> Tuple[int, int]:
+    def make_target(self) -> tuple[int, int]:
         """
         Выбирает цель согласно стратегии.
 
@@ -82,7 +82,7 @@ class computerAI_advanced(computerAI):
             target = super().make_target()
         return target
 
-    def delete_area_destroyed_ship(self, destroyed_ship: "Ship") -> None:
+    def delete_area_destroyed_ship(self, destroyed_ship: Ship) -> None:
         """
         Удаляет область вокруг уничтоженного корабля из доступных выстрелов.
 
@@ -96,8 +96,8 @@ class computerAI_advanced(computerAI):
             for i in range(-1, 2):
                 for j in range(-1, 2):
                     if (
-                        1 <= y + i <= self.field_size[0]
-                        and 1 <= x + j <= self.field_size[1]
+                        1 <= y + i <= self._field_size.height
+                        and 1 <= x + j <= self._field_size.width
                     ):
                         self.set_available_cells_to_shots_while_four_ships.discard(
                             (y + i, x + j)

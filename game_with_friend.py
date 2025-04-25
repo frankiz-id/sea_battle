@@ -1,28 +1,18 @@
-from typing import List, Optional, Set, Tuple
-
-from enums import type_player, Color
+from enums import TypePlayer, Color
 
 import pygame
 
-from draw_field import (
-    BLOCK_SIZE,
-    LEFT_RIGHT_MARGIN,
-    UPPER_MARGIN,
-    draw_Field,
-)
-from manual_ship_placer import manual_ship_placer
-from ships_ import Ship
-from ships_on_grid import ships_on_grid
+from draw_field import BLOCK_SIZE, LEFT_RIGHT_MARGIN, UPPER_MARGIN, DrawField, FieldSize
+from manual_ship_placer import ManualShipPlacer
+from ships import Ship
+from ships_on_grid import ShipsOnGrid
 
 
-class game_with_friend:
+class GameWithFriend:
     """Класс для управления игрой против друга."""
 
     def __init__(
-        self,
-        field_size: Tuple[int, int],
-        ship_config: List[int],
-        ship_placement: int
+        self, field_size: FieldSize, ship_config: list[int], ship_placement: int
     ) -> None:
         """
         Инициализация игры против друга.
@@ -35,29 +25,29 @@ class game_with_friend:
         self.field_size = field_size
         self.ship_config = ship_config
         self.ship_placement = ship_placement
-        self.field = draw_Field(field_size)
+        self.field = DrawField(field_size)
 
-        self.player1 = ships_on_grid(field_size, ship_config)
-        self.player2 = ships_on_grid(field_size, ship_config)
+        self.player1 = ShipsOnGrid(field_size, ship_config)
+        self.player2 = ShipsOnGrid(field_size, ship_config)
 
-        self.ship_placer: Optional[manual_ship_placer] = None
+        self.ship_placer: ManualShipPlacer | None = None
         self.setup_phase = True
         self.current_setup_player = 1
         self.game_over = False
-        self.winner: Optional[int] = None
+        self.winner: int | None = None
 
         # Текущий игрок (1 или 2)
         self.current_player = 1
 
         # Множества выстрелов и попаданий
-        self.player1_shots: Set[Tuple[int, int]] = (
+        self.player1_shots: set[tuple[int, int]] = (
             set()
         )  # выстрелы 1-го игрока (по полю 2-го)
-        self.player2_shots: Set[Tuple[int, int]] = (
+        self.player2_shots: set[tuple[int, int]] = (
             set()
         )  # выстрелы 2-го игрока (по полю 1-го)
-        self.player1_hits: Set[Tuple[int, int]] = set()  # попадания 1-го игрока
-        self.player2_hits: Set[Tuple[int, int]] = set()  # попадания 2-го игрока
+        self.player1_hits: set[tuple[int, int]] = set()  # попадания 1-го игрока
+        self.player2_hits: set[tuple[int, int]] = set()  # попадания 2-го игрока
 
     def start_game(self) -> None:
         """Начинает игру с расстановкой кораблей."""
@@ -77,12 +67,17 @@ class game_with_friend:
             offset = (LEFT_RIGHT_MARGIN, UPPER_MARGIN)  # Левое поле
         else:
             offset = (
-                LEFT_RIGHT_MARGIN + self.field_size[1] * BLOCK_SIZE + 10 * BLOCK_SIZE,
+                LEFT_RIGHT_MARGIN
+                + self.field_size.width * BLOCK_SIZE
+                + 10 * BLOCK_SIZE,
                 UPPER_MARGIN,
             )  # Правое поле
 
-        self.ship_placer = manual_ship_placer(
-            self.field_size, self.ship_config, offset, self.field.screen.get_width()
+        self.ship_placer = ManualShipPlacer(
+            self.field_size,
+            self.ship_config,
+            offset,
+            self.field.get_screen().get_width(),
         )
         self.draw_setup_screen()
 
@@ -121,8 +116,8 @@ class game_with_friend:
             offset_x, offset_y = self.ship_placer.field_offset
 
             if (
-                offset_x <= x <= offset_x + self.field_size[1] * BLOCK_SIZE
-                and offset_y <= y <= offset_y + self.field_size[0] * BLOCK_SIZE
+                offset_x <= x <= offset_x + self.field_size.width * BLOCK_SIZE
+                and offset_y <= y <= offset_y + self.field_size.height * BLOCK_SIZE
             ):
 
                 col = ((x - offset_x) // BLOCK_SIZE) + 1
@@ -148,14 +143,18 @@ class game_with_friend:
         if self.ship_placer is not None:
             if self.current_setup_player == 1:
                 # Сохраняем корабли для игрока 1
-                self.player1.create_lots_of_game_ships_manual(self.ship_placer.placed_ships)
+                self.player1.create_lots_of_game_ships_manual(
+                    self.ship_placer.placed_ships
+                )
                 self.player1.create_list_alive_ships()
                 # Переключаем на игрока 2
                 self.current_setup_player = 2
                 self.start_manual_placement()
             else:
                 # Сохраняем корабли для игрока 2
-                self.player2.create_lots_of_game_ships_manual(self.ship_placer.placed_ships)
+                self.player2.create_lots_of_game_ships_manual(
+                    self.ship_placer.placed_ships
+                )
                 self.player2.create_list_alive_ships()
                 # Завершаем фазу расстановки
                 self.setup_phase = False
@@ -163,31 +162,35 @@ class game_with_friend:
 
     def draw_setup_screen(self) -> None:
         """Отрисовывает экран во время фазы расстановки."""
-        self.field.screen.fill(Color.WHITE.value)
+        self.field.get_screen().fill(Color.WHITE.value)
         self.field.draw_field_grid()
-        self.field.sign_grids(type_player.PLAYER, 1)
+        self.field.sign_grids(TypePlayer.PLAYER, 1)
 
         # Отрисовка процесса расстановки
         if self.ship_placer:
-            self.ship_placer.draw(self.field.screen)
-            self.ship_placer.draw_ship_info(self.field.screen)
+            self.ship_placer.draw(self.field.get_screen())
+            self.ship_placer.draw_ship_info(self.field.get_screen())
 
         # Подпись текущего игрока
         font = pygame.font.SysFont("Arial", 30)
         text = f"Игрок {self.current_setup_player} размещает корабли"
         text_surface = font.render(text, True, Color.BLACK.value)
-        self.field.screen.blit(
+        self.field.get_screen().blit(
             text_surface,
-            (self.field.screen.get_width() // 2 - text_surface.get_width() // 2, 10),
+            (
+                self.field.get_screen().get_width() // 2
+                - text_surface.get_width() // 2,
+                10,
+            ),
         )
 
         pygame.display.update()
 
     def draw_game_state(self) -> None:
         """Отрисовка текущего состояния игры."""
-        self.field.screen.fill(Color.WHITE.value)
+        self.field.get_screen().fill(Color.WHITE.value)
         self.field.draw_field_grid()
-        self.field.sign_grids(type_player.PLAYER)
+        self.field.sign_grids(TypePlayer.PLAYER)
 
         # Подписи полей
         font = pygame.font.SysFont("Arial", 20)
@@ -203,22 +206,24 @@ class game_with_friend:
             self.draw_enemy_field(
                 LEFT_RIGHT_MARGIN, self.player1_shots, self.player1_hits
             )
-            self.field.screen.blit(
+            self.field.get_screen().blit(
                 enemy_text, (LEFT_RIGHT_MARGIN + 50, UPPER_MARGIN - 30)
             )
 
             # Правое поле - свое поле (корабли видны)
             self.draw_own_field(
-                LEFT_RIGHT_MARGIN + self.field_size[1] * BLOCK_SIZE + 10 * BLOCK_SIZE,
+                LEFT_RIGHT_MARGIN
+                + self.field_size.width * BLOCK_SIZE
+                + 10 * BLOCK_SIZE,
                 self.player1,
                 self.player2_shots,
                 self.player2_hits,
             )
-            self.field.screen.blit(
+            self.field.get_screen().blit(
                 your_text,
                 (
                     LEFT_RIGHT_MARGIN
-                    + self.field_size[1] * BLOCK_SIZE
+                    + self.field_size.width * BLOCK_SIZE
                     + 10 * BLOCK_SIZE
                     + 50,
                     UPPER_MARGIN - 30,
@@ -229,22 +234,24 @@ class game_with_friend:
             self.draw_enemy_field(
                 LEFT_RIGHT_MARGIN, self.player2_shots, self.player2_hits
             )
-            self.field.screen.blit(
+            self.field.get_screen().blit(
                 enemy_text, (LEFT_RIGHT_MARGIN + 50, UPPER_MARGIN - 30)
             )
 
             # Правое поле - свое поле (корабли видны)
             self.draw_own_field(
-                LEFT_RIGHT_MARGIN + self.field_size[1] * BLOCK_SIZE + 10 * BLOCK_SIZE,
+                LEFT_RIGHT_MARGIN
+                + self.field_size.width * BLOCK_SIZE
+                + 10 * BLOCK_SIZE,
                 self.player2,
                 self.player1_shots,
                 self.player1_hits,
             )
-            self.field.screen.blit(
+            self.field.get_screen().blit(
                 your_text,
                 (
                     LEFT_RIGHT_MARGIN
-                    + self.field_size[1] * BLOCK_SIZE
+                    + self.field_size.width * BLOCK_SIZE
                     + 10 * BLOCK_SIZE
                     + 50,
                     UPPER_MARGIN - 30,
@@ -253,18 +260,20 @@ class game_with_friend:
 
         # Отображение текущего игрока
         turn_font = pygame.font.SysFont("Arial", 30)
-        turn_text = turn_font.render(f"Ход игрока {self.current_player}", True, Color.BLACK.value)
-        self.field.screen.blit(
+        turn_text = turn_font.render(
+            f"Ход игрока {self.current_player}", True, Color.BLACK.value
+        )
+        self.field.get_screen().blit(
             turn_text,
-            (self.field.screen.get_width() // 2 - turn_text.get_width() // 2, 10),
+            (self.field.get_screen().get_width() // 2 - turn_text.get_width() // 2, 10),
         )
 
     def draw_own_field(
         self,
         offset_x: int,
-        player: "ships_on_grid",
-        enemy_shots: Set[Tuple[int, int]],
-        enemy_hits: Set[Tuple[int, int]],
+        player: ShipsOnGrid,
+        enemy_shots: set[tuple[int, int]],
+        enemy_hits: set[tuple[int, int]],
     ) -> None:
         """
         Отрисовка своего поля с кораблями.
@@ -285,8 +294,8 @@ class game_with_friend:
     def draw_enemy_field(
         self,
         offset_x: int,
-        my_shots: Set[Tuple[int, int]],
-        my_hits: Set[Tuple[int, int]],
+        my_shots: set[tuple[int, int]],
+        my_hits: set[tuple[int, int]],
     ) -> None:
         """
         Отрисовка поля противника (без кораблей).
@@ -301,7 +310,7 @@ class game_with_friend:
             self.draw_shot_marker(shot, offset_x, shot in my_hits)
 
     def draw_shot_marker(
-        self, cell: Tuple[int, int], offset_x: int, is_hit: bool
+        self, cell: tuple[int, int], offset_x: int, is_hit: bool
     ) -> None:
         """
         Отрисовка маркера выстрела.
@@ -318,7 +327,7 @@ class game_with_friend:
         if is_hit:
             # Красный кружок для попадания
             pygame.draw.circle(
-                self.field.screen,
+                self.field.get_screen(),
                 Color.RED.value,
                 (x + BLOCK_SIZE // 2, y + BLOCK_SIZE // 2),
                 BLOCK_SIZE // 3,
@@ -326,10 +335,18 @@ class game_with_friend:
         else:
             # Крестик для промаха
             pygame.draw.line(
-                self.field.screen, Color.BLACK.value, (x, y), (x + BLOCK_SIZE, y + BLOCK_SIZE), 2
+                self.field.get_screen(),
+                Color.BLACK.value,
+                (x, y),
+                (x + BLOCK_SIZE, y + BLOCK_SIZE),
+                2,
             )
             pygame.draw.line(
-                self.field.screen, Color.BLACK.value, (x + BLOCK_SIZE, y), (x, y + BLOCK_SIZE), 2
+                self.field.get_screen(),
+                Color.BLACK.value,
+                (x + BLOCK_SIZE, y),
+                (x, y + BLOCK_SIZE),
+                2,
             )
 
     def handle_turn(self, event: pygame.event.Event) -> None:
@@ -342,11 +359,13 @@ class game_with_friend:
         if event.type == pygame.MOUSEBUTTONDOWN and not self.game_over:
             x, y = event.pos
             field_left = LEFT_RIGHT_MARGIN
-            field_right = field_left + self.field_size[1] * BLOCK_SIZE
+            field_right = field_left + self.field_size.width * BLOCK_SIZE
 
             if (
                 field_left <= x <= field_right
-                and UPPER_MARGIN <= y <= UPPER_MARGIN + self.field_size[0] * BLOCK_SIZE
+                and UPPER_MARGIN
+                <= y
+                <= UPPER_MARGIN + self.field_size.height * BLOCK_SIZE
             ):
                 col = (x - field_left) // BLOCK_SIZE + 1
                 row = (y - UPPER_MARGIN) // BLOCK_SIZE + 1
@@ -381,10 +400,10 @@ class game_with_friend:
 
     def process_shot(
         self,
-        fired_block: Tuple[int, int],
-        target: "ships_on_grid",
-        shots_set: Set[Tuple[int, int]],
-        hits_set: Set[Tuple[int, int]],
+        fired_block: tuple[int, int],
+        target: ShipsOnGrid,
+        shots_set: set[tuple[int, int]],
+        hits_set: set[tuple[int, int]],
     ) -> None:
         """
         Обработка выстрела (без автоматического переключения игрока).
@@ -413,9 +432,7 @@ class game_with_friend:
                             self.winner = 1 if target == self.player2 else 2
                 break
 
-    def mark_destroyed_ship(
-        self, ship: "Ship", shots_set: Set[Tuple[int, int]]
-    ) -> None:
+    def mark_destroyed_ship(self, ship: Ship, shots_set: set[tuple[int, int]]) -> None:
         """
         Помечаем область вокруг уничтоженного корабля.
 
@@ -428,8 +445,8 @@ class game_with_friend:
             for i in range(-1, 2):
                 for j in range(-1, 2):
                     if (
-                        1 <= row + i <= self.field_size[0]
-                        and 1 <= col + j <= self.field_size[1]
+                        1 <= row + i <= self.field_size.height
+                        and 1 <= col + j <= self.field_size.width
                     ):
                         mark_cell = (row + i, col + j)
                         shots_set.add(
@@ -439,16 +456,18 @@ class game_with_friend:
     def show_game_result(self) -> None:
         """Отображение результата игры."""
         font = pygame.font.SysFont("Arial", 40)
-        result_text = font.render(f"Игрок {self.winner} победил!", True, Color.BLACK.value)
+        result_text = font.render(
+            f"Игрок {self.winner} победил!", True, Color.BLACK.value
+        )
         text_rect = result_text.get_rect(
             center=(
-                self.field.screen.get_width() // 2,
-                self.field.screen.get_height() // 2,
+                self.field.get_screen().get_width() // 2,
+                self.field.get_screen().get_height() // 2,
             )
         )
 
-        self.field.screen.fill(Color.WHITE.value)
-        self.field.screen.blit(result_text, text_rect)
+        self.field.get_screen().fill(Color.WHITE.value)
+        self.field.get_screen().blit(result_text, text_rect)
         pygame.display.update()
 
     def run(self) -> None:

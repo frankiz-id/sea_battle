@@ -1,15 +1,15 @@
 import copy
 import random
-from typing import Dict, List, Optional, Set, Tuple
 
-from ships_ import Ship
+from ships import Ship
 from enums import ShipOrientation
+from draw_field import FieldSize
 
 
-class ships_on_grid:
+class ShipsOnGrid:
     """Класс для управления кораблями на игровом поле."""
 
-    def __init__(self, field_size: Tuple[int, int], ship_config: List[int]) -> None:
+    def __init__(self, field_size: FieldSize, ship_config: list[int]) -> None:
         """
         Инициализация объекта управления кораблями.
 
@@ -17,30 +17,30 @@ class ships_on_grid:
             field_size: Размер поля в клетках (ширина, высота)
             ship_config: Конфигурация кораблей
         """
-        self.set_available_cells: Set[Tuple[int, int]] = set(
+        self.set_available_cells: set[tuple[int, int]] = set(
             (i, j)
-            for i in range(1, field_size[0] + 1)
-            for j in range(1, field_size[1] + 1)
+            for i in range(1, field_size.height + 1)
+            for j in range(1, field_size.width + 1)
         )
-        self.list_of_game_ships: List[Ship] = list()
-        self.list_alive_ships: List[Ship] = list()
-        self.field_size: Tuple[int, int] = field_size
-        self.ship_config: List[int] = ship_config
-        self.ship_groups: Dict[int, int] = self.group_ships_by_size()
+        self.list_of_game_ships: list[Ship] = list()
+        self.list_alive_ships: list[Ship] = list()
+        self.field_size: FieldSize = field_size
+        self.ship_config: list[int] = ship_config
+        self.ship_groups: dict[int, int] = self.group_ships_by_size()
 
-    def group_ships_by_size(self) -> Dict[int, int]:
+    def group_ships_by_size(self) -> dict[int, int]:
         """
         Группирует корабли по размерам.
 
         Returns:
             Словарь с количеством кораблей по размерам
         """
-        groups: Dict[int, int] = {}
+        groups: dict[int, int] = {}
         for size in self.ship_config:
             groups[size] = groups.get(size, 0) + 1
         return groups
 
-    def find_ship_by_cell(self, cell: Tuple[int, int]) -> Optional[Ship]:
+    def find_ship_by_cell(self, cell: tuple[int, int]) -> Ship | None:
         """
         Находит корабль по координатам клетки.
 
@@ -55,7 +55,7 @@ class ships_on_grid:
                 return ship
         return None
 
-    def generate_first_cells_for_new_ships(self) -> Tuple[int, int, int, int]:
+    def generate_first_cells_for_new_ships(self) -> tuple[int, int, int, int]:
         """
         Генерирует начальные координаты и направление для нового корабля.
 
@@ -81,12 +81,12 @@ class ships_on_grid:
             string_coord, column_coord, horizontal_or_vertical, direction = (
                 self.generate_first_cells_for_new_ships()
             )
-            new_ship: List[Tuple[int, int]] = []
+            new_ship: list[tuple[int, int]] = []
 
             if horizontal_or_vertical:  # горизонтальное размещение
                 for _ in range(dimension_ship):
                     new_ship.append((string_coord, column_coord))
-                    if column_coord < self.field_size[1]:
+                    if column_coord < self.field_size.width:
                         column_coord += direction
                     else:
                         column_coord = new_ship[0][1] - 1
@@ -94,7 +94,7 @@ class ships_on_grid:
             else:  # вертикальное размещение
                 for _ in range(dimension_ship):
                     new_ship.append((string_coord, column_coord))
-                    if string_coord < self.field_size[0]:
+                    if string_coord < self.field_size.height:
                         string_coord += direction
                     else:
                         string_coord = new_ship[0][0] - 1
@@ -103,10 +103,15 @@ class ships_on_grid:
             if self.is_correct_place(new_ship):
                 self.reserve_ship_area(new_ship)
                 return Ship(
-                    new_ship, ShipOrientation.HORIZONTAL if horizontal_or_vertical else ShipOrientation.VERTICAL
+                    new_ship,
+                    (
+                        ShipOrientation.HORIZONTAL
+                        if horizontal_or_vertical
+                        else ShipOrientation.VERTICAL
+                    ),
                 )
 
-    def reserve_ship_area(self, ship_cells: List[Tuple[int, int]]) -> None:
+    def reserve_ship_area(self, ship_cells: list[tuple[int, int]]) -> None:
         """
         Резервирует область вокруг корабля.
 
@@ -120,7 +125,7 @@ class ships_on_grid:
                     y = cell[1] + y_offset
                     self.set_available_cells.discard((x, y))
 
-    def is_correct_place(self, ship: List[Tuple[int, int]]) -> bool:
+    def is_correct_place(self, ship: list[tuple[int, int]]) -> bool:
         """
         Проверяет, можно ли разместить корабль в данной позиции.
 
@@ -136,7 +141,7 @@ class ships_on_grid:
         return True
 
     def create_lots_of_game_ships_manual(
-        self, manually_placed_ships: List[Ship]
+        self, manually_placed_ships: list[Ship]
     ) -> None:
         """
         Создает корабли из ручной расстановки.
@@ -147,8 +152,8 @@ class ships_on_grid:
         self.list_of_game_ships.clear()
         self.set_available_cells = set(
             (i, j)
-            for i in range(1, self.field_size[0] + 1)
-            for j in range(1, self.field_size[1] + 1)
+            for i in range(1, self.field_size.height + 1)
+            for j in range(1, self.field_size.width + 1)
         )
 
         for ship in manually_placed_ships:

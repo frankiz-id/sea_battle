@@ -1,21 +1,26 @@
-from enum import Enum
+from enum import Enum, StrEnum
 
-class type_player(Enum):
+
+class TypePlayer(StrEnum):
     PLAYER = "player"
     COMPUTER = "computer"
 
-class GameMode(Enum):
+
+class GameMode(StrEnum):
     WEAK_AI = "weak_ai"
     STRONG_AI = "strong_ai"
     FRIEND = "friend"
 
-class ShipOrientation(Enum):
+
+class ShipOrientation(StrEnum):
     HORIZONTAL = "horizontal"
     VERTICAL = "vertical"
 
-class AIType(Enum):
+
+class AIType(StrEnum):
     WEAK = "weak_ai"
     STRONG = "strong_ai"
+
 
 class Color(Enum):
     WHITE = (255, 255, 255)
