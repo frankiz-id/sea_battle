@@ -4,81 +4,59 @@ from enums import Color
 from draw_field import DrawField, FieldSize
 from ships_on_grid import ShipsOnGrid
 from ships import Ship
+from battleship_interface import IBattleshipGame
 
 
-class BaseBattleshipGame(ABC):
-    """Базовый абстрактный класс для игр 'Морской бой'."""
+class BaseBattleshipGame(IBattleshipGame, ABC):
+    """Base abstract class for Battleship games."""
 
     def __init__(
         self,
-        field_size: FieldSize,
-        ship_config: list[int],
-        ship_placement: int,
+        _field_size: FieldSize,
+        _ship_config: list[int],
+        _ship_placement: int,
     ) -> None:
-        self._field_size = field_size
-        self._ship_config = ship_config
-        self._field = DrawField(field_size)
-        self._ship_placement = ship_placement
+        self._field_size = _field_size
+        self._ship_config = _ship_config
+        self._field = DrawField(_field_size)
+        self._ship_placement = _ship_placement
         self._game_over = False
         self._winner: str | None = None
 
     @abstractmethod
-    def start_game(self) -> None:
-        """Начало игры (расстановка кораблей)."""
+    def _start_game(self) -> None:
+        """Start the game (ship placement)."""
         pass
 
     @abstractmethod
-    def start_manual_placement(self) -> None:
-        """Начинает процесс ручной расстановки кораблей."""
+    def _start_manual_placement(self) -> None:
+        """Start manual ship placement process."""
         pass
 
     @abstractmethod
-    def handle_setup_event(self, event: pygame.event.Event) -> None:
-        """
-        Обрабатывает события во время фазы расстановки.
-
-        Args:
-            event: Событие pygame для обработки
-        """
+    def _handle_setup_event(self, event: pygame.event.Event) -> None:
+        """Handle events during setup phase."""
         pass
 
     @abstractmethod
-    def draw_setup_screen(self) -> None:
-        """Отрисовывает экран во время фазы расстановки."""
+    def _draw_setup_screen(self) -> None:
+        """Draw setup screen."""
         pass
 
     @abstractmethod
-    def process_shot(
+    def _process_shot(
         self, fired_block: tuple[int, int], target: ShipsOnGrid, offset: int
     ) -> None:
-        """
-        Обрабатывает результат выстрела.
-
-        Args:
-            fired_block: Координаты выстрела (строка, столбец)
-            target: Цель выстрела (игрок или компьютер)
-            offset: Смещение по оси X для отрисовки
-        """
+        """Process shot result."""
         pass
 
     @abstractmethod
-    def mark_destroyed_ship(self, ship: Ship, shots_set: set[tuple[int, int]]) -> None:
-        """
-        Помечает область вокруг уничтоженного корабля.
-
-        Args:
-            ship: Уничтоженный корабль
-            shots_set: Множество, из которого нужно удалить корабль
-        """
-        pass
-
-    @abstractmethod
-    def run(self) -> None:
-        """Основной игровой цикл."""
+    def _mark_destroyed_ship(self, ship: Ship, shots_set: set[tuple[int, int]]) -> None:
+        """Mark area around destroyed ship."""
         pass
 
     def show_game_result(self) -> None:
-        """Отображение результата игры."""
+        """Display game result."""
         font = pygame.font.SysFont("Arial", 40)
         result_text = font.render(
             f"Игрок {self._winner} победил!", True, Color.BLACK.value

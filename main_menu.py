@@ -63,26 +63,30 @@ class MainMenu:
     def __init__(self) -> None:
         """Инициализация главного меню."""
         pygame.init()
-        self.screen = pygame.display.set_mode(DrawField().get_screen_size())
-        self.screen.fill(Color.WHITE.value)
-        self.font = FONT
-        self.game_mode: str | None = None
-        self.field_size_in_blocks: FieldSize = FieldSize(10, 10)
-        self.ship_config: list[int] = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
-        self.temp_ship_counts: list[int] = [0, 0, 0, 0]
-        self.plus_buttons: list[pygame.Rect] = []
-        self.minus_buttons: list[pygame.Rect] = []
-        self.error_message: str = ""
-        self.error_time: int = 0
-        self.number_free_cells: int = (
-            self.field_size_in_blocks.height * self.field_size_in_blocks.width
+        # Указываем стандартный размер поля 10x10 для меню
+        default_field_size = FieldSize(10, 10)
+        self._screen = pygame.display.set_mode(
+            DrawField(default_field_size).get_screen_size()
         )
-        self.ship_cell_requirements: dict[int, int] = {4: 14, 3: 12, 2: 9, 1: 5}
+        self._screen.fill(Color.WHITE.value)
+        self._font = FONT
+        self._game_mode: str | None = None
+        self._field_size_in_blocks: FieldSize = default_field_size
+        self.ship_config: list[int] = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
+        self._temp_ship_counts: list[int] = [0, 0, 0, 0]
+        self._plus_buttons: list[pygame.Rect] = []
+        self._minus_buttons: list[pygame.Rect] = []
+        self._error_message: str = ""
+        self._error_time: int = 0
+        self._number_free_cells: int = (
+            self._field_size_in_blocks.height * self._field_size_in_blocks.width
+        )
+        self._ship_cell_requirements: dict[int, int] = {4: 14, 3: 12, 2: 9, 1: 5}
         self.ship_placement: int = 1  # 0 - ручная, 1 - автоматическая
 
-        self.show_help: bool = False  # Флаг отображения справки
-        self.content_height: int = len(help_lines) * 30 + 200
-        self.help_scroll_y: int = 0
+        self._show_help: bool = False  # Флаг отображения справки
+        self._content_height: int = len(help_lines) * 30 + 200
+        self._help_scroll_y: int = 0
 
     def draw_text(self, text: str, x: int, y: int, color: Color = Color.BLACK) -> None:
         """
@@ -94,8 +98,8 @@ class MainMenu:
             y: Координата по Y
             color: Цвет текста
         """
-        text_surface = self.font.render(text, False, color.value)
-        self.screen.blit(text_surface, (x, y))
+        text_surface = self._font.render(text, False, color.value)
+        self._screen.blit(text_surface, (x, y))
 
     def run(self) -> tuple[str | None, int, FieldSize, list[int]]:
         """
@@ -106,7 +110,7 @@ class MainMenu:
         """
         running = True
         while running:
-            if self.show_help:
+            if self._show_help:
                 self.draw_help_screen()
                 running = self.handle_help_events()  # Используем специальный обработчик
             else:
@@ -116,42 +120,44 @@ class MainMenu:
             pygame.display.update()
 
         return (
-            self.game_mode,
+            self._game_mode,
             self.ship_placement,
-            self.field_size_in_blocks,
+            self._field_size_in_blocks,
             self.ship_config,
         )
 
     def draw_help_screen(self) -> None:
         """Отрисовывает экран справки."""
-        self.screen.fill(Color.LIGHT_GRAY.value)
+        self._screen.fill(Color.LIGHT_GRAY.value)
 
         # Инициализация параметров прокрутки
         if not hasattr(self, "help_scroll_y"):
-            self.help_scroll_y = 0
-        self.content_height = 1500  # Общая высота контента
+            self._help_scroll_y = 0
+        self._content_height = 1500  # Общая высота контента
 
         # Создаем поверхность для контента
-        content_surface = pygame.Surface((self.screen.get_width(), self.content_height))
+        content_surface = pygame.Surface(
+            (self._screen.get_width(), self._content_height)
+        )
         content_surface.fill(Color.LIGHT_GRAY.value)
 
         # Отрисовка текста на content_surface
         y_pos = 20
         for line in help_lines:
-            text = self.font.render(line, True, Color.BLACK.value)
+            text = self._font.render(line, True, Color.BLACK.value)
             content_surface.blit(text, (50, y_pos))
             y_pos += 30
 
         # Отображаем видимую часть с учетом прокрутки
-        self.screen.blit(content_surface, (0, -self.help_scroll_y))
+        self._screen.blit(content_surface, (0, -self._help_scroll_y))
 
         # Кнопка "Назад" (рисуем отдельно, чтобы была фиксированной)
         back_button = pygame.Rect(
-            self.screen.get_width() // 2 - 100, self.screen.get_height() - 80, 200, 50
+            self._screen.get_width() // 2 - 100, self._screen.get_height() - 80, 200, 50
         )
-        pygame.draw.rect(self.screen, Color.PALE_GRAY.value, back_button)
-        back_text = self.font.render("Назад", True, Color.BLACK.value)
-        self.screen.blit(
+        pygame.draw.rect(self._screen, Color.PALE_GRAY.value, back_button)
+        back_text = self._font.render("Назад", True, Color.BLACK.value)
+        self._screen.blit(
             back_text,
             (
                 back_button.x + back_button.width // 2 - back_text.get_width() // 2,
@@ -175,28 +181,28 @@ class MainMenu:
 
                 # Проверяем кнопку "Назад" (фиксированная позиция)
                 back_button = pygame.Rect(
-                    self.screen.get_width() // 2 - 100,
-                    self.screen.get_height() - 80,
+                    self._screen.get_width() // 2 - 100,
+                    self._screen.get_height() - 80,
                     200,
                     50,
                 )
                 if back_button.collidepoint(mouse_pos):
-                    self.show_help = False
+                    self._show_help = False
                     return True
 
             # Обработка прокрутки колесиком мыши
             if event.type == pygame.MOUSEWHEEL:
-                visible_height = self.screen.get_height()
-                max_scroll = self.content_height - visible_height
-                self.help_scroll_y = max(
-                    0, min(self.help_scroll_y - event.y * 30, max_scroll)
+                visible_height = self._screen.get_height()
+                max_scroll = self._content_height - visible_height
+                self._help_scroll_y = max(
+                    0, min(self._help_scroll_y - event.y * 30, max_scroll)
                 )
 
         return True
 
     def draw_main_menu(self) -> None:
         """Отрисовывает главное меню."""
-        self.screen.fill(Color.WHITE.value)
+        self._screen.fill(Color.WHITE.value)
         y_position = 100
         for option in MENU_OPTIONS.values():
             self.draw_text(option, 100, y_position)
@@ -212,32 +218,32 @@ class MainMenu:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
-            if self.show_help:
+            if self._show_help:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_pos = pygame.mouse.get_pos()
                     back_button = pygame.Rect(
-                        self.screen.get_width() // 2 - 100,
-                        self.screen.get_height() - 80,
+                        self._screen.get_width() // 2 - 100,
+                        self._screen.get_height() - 80,
                         200,
                         50,
                     )
                     if back_button.collidepoint(mouse_pos):
-                        self.show_help = False
+                        self._show_help = False
             else:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_1:
-                        self.game_mode = GameMode.WEAK_AI
+                        self._game_mode = GameMode.WEAK_AI
                         return False
                     elif event.key == pygame.K_2:
-                        self.game_mode = GameMode.STRONG_AI
+                        self._game_mode = GameMode.STRONG_AI
                         return False
                     elif event.key == pygame.K_3:
-                        self.game_mode = GameMode.FRIEND
+                        self._game_mode = GameMode.FRIEND
                         return False
                     elif event.key == pygame.K_4:
                         self.show_settings(0)
                     elif event.key == pygame.K_5:
-                        self.show_help = True
+                        self._show_help = True
                     elif event.key == pygame.K_6:
                         return False
         return True
@@ -264,11 +270,11 @@ class MainMenu:
         Args:
             selected_option: Индекс выбранной опции
         """
-        self.screen.fill(Color.WHITE.value)
+        self._screen.fill(Color.WHITE.value)
         for i, option in enumerate(SETTINGS_OPTIONS):
             text = option
             if i == 0:
-                text += str(self.field_size_in_blocks.height)
+                text += str(self._field_size_in_blocks.height)
             elif i == 2:
                 if self.ship_placement == 1:
                     text += PLACEMENT_OPTIONS[self.ship_placement]
@@ -325,10 +331,10 @@ class MainMenu:
         if new_size:
             new_size_field = int(new_size)
             if MIN_FIELD_SIZE <= new_size_field <= MAX_FIELD_SIZE:
-                self.field_size_in_blocks = FieldSize(new_size_field, new_size_field)
-                self.number_free_cells = new_size_field * new_size_field
+                self._field_size_in_blocks = FieldSize(new_size_field, new_size_field)
+                self._number_free_cells = new_size_field * new_size_field
                 self.ship_config = [1]
-                self.temp_ship_counts = [0, 0, 0, 1]
+                self._temp_ship_counts = [0, 0, 0, 1]
                 return True
         return False
 
@@ -336,8 +342,8 @@ class MainMenu:
         """Настраивает конфигурацию кораблей."""
         self.init_temp_ship_counts()
         self.calculate_occupied_cells()
-        self.plus_buttons = []
-        self.minus_buttons = []
+        self._plus_buttons = []
+        self._minus_buttons = []
 
         configuring = True
         while configuring:
@@ -346,30 +352,30 @@ class MainMenu:
 
     def init_temp_ship_counts(self) -> None:
         """Инициализирует временные счетчики кораблей."""
-        self.temp_ship_counts = [0, 0, 0, 0]
+        self._temp_ship_counts = [0, 0, 0, 0]
         for ship in self.ship_config:
             if ship == 4:
-                self.temp_ship_counts[0] += 1
+                self._temp_ship_counts[0] += 1
             elif ship == 3:
-                self.temp_ship_counts[1] += 1
+                self._temp_ship_counts[1] += 1
             elif ship == 2:
-                self.temp_ship_counts[2] += 1
+                self._temp_ship_counts[2] += 1
             elif ship == 1:
-                self.temp_ship_counts[3] += 1
+                self._temp_ship_counts[3] += 1
 
     def calculate_occupied_cells(self) -> None:
         """Вычисляет количество занятых клеток на поле."""
         occupied_cells = 0
-        for size, count in zip(SHIP_SIZES, self.temp_ship_counts):
-            occupied_cells += count * self.ship_cell_requirements[size]
-        self.number_free_cells = (
-            self.field_size_in_blocks.height * self.field_size_in_blocks.width
+        for size, count in zip(SHIP_SIZES, self._temp_ship_counts):
+            occupied_cells += count * self._ship_cell_requirements[size]
+        self._number_free_cells = (
+            self._field_size_in_blocks.height * self._field_size_in_blocks.width
             - occupied_cells
         )
 
     def draw_ship_configuration(self) -> None:
         """Отрисовывает экран конфигурации кораблей."""
-        self.screen.fill(Color.WHITE.value)
+        self._screen.fill(Color.WHITE.value)
         self.draw_configuration_header()
         self.draw_ship_controls()
         self.draw_action_buttons()
@@ -378,18 +384,18 @@ class MainMenu:
     def draw_configuration_header(self) -> None:
         """Отрисовывает заголовок экрана конфигурации кораблей."""
         self.draw_text("Configure Ships", 100, 50)
-        self.draw_text(f"Свободных клеток: {self.number_free_cells}", 400, 50)
+        self.draw_text(f"Свободных клеток: {self._number_free_cells}", 400, 50)
 
         if (
             hasattr(self, "error_message")
-            and pygame.time.get_ticks() - self.error_time < 5000
+            and pygame.time.get_ticks() - self._error_time < 5000
         ):
-            self.draw_text(self.error_message, 100, 80, Color.RED)
+            self.draw_text(self._error_message, 100, 80, Color.RED)
 
     def draw_ship_controls(self) -> None:
         """Отрисовывает элементы управления конфигурацией кораблей."""
         start_y = 100
-        for i, (ship_type, count) in enumerate(zip(SHIP_TYPES, self.temp_ship_counts)):
+        for i, (ship_type, count) in enumerate(zip(SHIP_TYPES, self._temp_ship_counts)):
             self.draw_ship_type(ship_type, 100, start_y + i * 50)
             self.draw_ship_count(count, 250, start_y + i * 50)
             self.draw_control_buttons(i, 300, 350, start_y + i * 50)
@@ -429,28 +435,28 @@ class MainMenu:
             y: Координата Y
         """
         minus_rect = pygame.Rect(minus_x, y, 30, 30)
-        pygame.draw.rect(self.screen, Color.BLACK.value, minus_rect, 2)
+        pygame.draw.rect(self._screen, Color.BLACK.value, minus_rect, 2)
         self.draw_text("-", minus_x + 10, y)
 
         plus_rect = pygame.Rect(plus_x, y, 30, 30)
-        pygame.draw.rect(self.screen, Color.BLACK.value, plus_rect, 2)
+        pygame.draw.rect(self._screen, Color.BLACK.value, plus_rect, 2)
         self.draw_text("+", plus_x + 10, y)
 
-        if len(self.minus_buttons) <= index:
-            self.minus_buttons.append(minus_rect)
-            self.plus_buttons.append(plus_rect)
+        if len(self._minus_buttons) <= index:
+            self._minus_buttons.append(minus_rect)
+            self._plus_buttons.append(plus_rect)
         else:
-            self.minus_buttons[index] = minus_rect
-            self.plus_buttons[index] = plus_rect
+            self._minus_buttons[index] = minus_rect
+            self._plus_buttons[index] = plus_rect
 
     def draw_action_buttons(self) -> None:
         """Отрисовывает кнопки действий для меню настройки конфигурации кораблей (подтвердить, сбросить)."""
         confirm_rect = pygame.Rect(100, 350, 200, 40)
-        pygame.draw.rect(self.screen, Color.BLACK.value, confirm_rect, 2)
+        pygame.draw.rect(self._screen, Color.BLACK.value, confirm_rect, 2)
         self.draw_text("Confirm", 180, 360)
 
         reset_rect = pygame.Rect(100, 400, 200, 40)
-        pygame.draw.rect(self.screen, Color.BLACK.value, reset_rect, 2)
+        pygame.draw.rect(self._screen, Color.BLACK.value, reset_rect, 2)
         self.draw_text("Reset to Default", 140, 410)
 
     def handle_ship_configuration_events(self) -> bool:
@@ -479,14 +485,14 @@ class MainMenu:
             pos: Позиция клика (x, y)
         """
         for i, (plus_rect, minus_rect) in enumerate(
-            zip(self.plus_buttons, self.minus_buttons)
+            zip(self._plus_buttons, self._minus_buttons)
         ):
             ship_size = SHIP_SIZES[i]
             if plus_rect.collidepoint(pos) and self.can_place_ship(ship_size):
-                self.temp_ship_counts[i] += 1
-            elif minus_rect.collidepoint(pos) and self.temp_ship_counts[i] > 0:
-                self.temp_ship_counts[i] -= 1
-                self.number_free_cells += self.ship_cell_requirements[ship_size]
+                self._temp_ship_counts[i] += 1
+            elif minus_rect.collidepoint(pos) and self._temp_ship_counts[i] > 0:
+                self._temp_ship_counts[i] -= 1
+                self._number_free_cells += self._ship_cell_requirements[ship_size]
 
     def handle_confirm_button(self, pos: tuple[int, int]) -> bool:
         """
@@ -501,7 +507,7 @@ class MainMenu:
         confirm_rect = pygame.Rect(100, 350, 200, 40)
         if confirm_rect.collidepoint(pos):
             new_config = []
-            for i, count in enumerate(self.temp_ship_counts):
+            for i, count in enumerate(self._temp_ship_counts):
                 ship_size = SHIP_SIZES[i]
                 new_config.extend([ship_size] * count)
             self.ship_config = new_config
@@ -517,10 +523,10 @@ class MainMenu:
         """
         reset_rect = pygame.Rect(100, 400, 200, 40)
         if reset_rect.collidepoint(pos):
-            self.temp_ship_counts = [0, 0, 0, 1]
-            self.number_free_cells = (
-                self.field_size_in_blocks.height * self.field_size_in_blocks.width
-                - self.ship_cell_requirements[1]
+            self._temp_ship_counts = [0, 0, 0, 1]
+            self._number_free_cells = (
+                self._field_size_in_blocks.height * self._field_size_in_blocks.width
+                - self._ship_cell_requirements[1]
             )
 
     def can_place_ship(self, ship_size: int) -> bool:
@@ -533,13 +539,13 @@ class MainMenu:
         Returns:
             True, если корабль можно разместить, иначе False
         """
-        if self.number_free_cells <= 0:
+        if self._number_free_cells <= 0:
             self.show_error_message("Еще один такой корабль не поместится на поле")
             return False
 
-        required_cells = self.ship_cell_requirements.get(ship_size, 0)
-        if required_cells <= self.number_free_cells:
-            self.number_free_cells -= required_cells
+        required_cells = self._ship_cell_requirements.get(ship_size, 0)
+        if required_cells <= self._number_free_cells:
+            self._number_free_cells -= required_cells
             return True
         else:
             self.show_error_message("Еще один такой корабль не поместится на поле")
@@ -552,8 +558,8 @@ class MainMenu:
         Args:
             message: Текст сообщения
         """
-        self.error_message = message
-        self.error_time = pygame.time.get_ticks()
+        self._error_message = message
+        self._error_time = pygame.time.get_ticks()
 
     def get_user_input(self, prompt: str) -> str | None:
         """
@@ -588,12 +594,12 @@ class MainMenu:
                     elif pygame.K_0 <= event.key <= pygame.K_9:
                         text += event.unicode
 
-            self.screen.fill(Color.WHITE.value)
-            txt_surface = self.font.render(prompt + text, True, color)
+            self._screen.fill(Color.WHITE.value)
+            txt_surface = self._font.render(prompt + text, True, color)
             width = max(200, txt_surface.get_width() + 10)
             input_box.w = width
-            self.screen.blit(txt_surface, (input_box.x + 5, input_box.y + 5))
-            pygame.draw.rect(self.screen, color, input_box, 2)
+            self._screen.blit(txt_surface, (input_box.x + 5, input_box.y + 5))
+            pygame.draw.rect(self._screen, color, input_box, 2)
             pygame.display.update()
 
         return text

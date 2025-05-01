@@ -2,7 +2,7 @@ import pygame
 
 from ships import Ship
 from enums import Color, TypePlayer
-from collections import namedtuple
+from typing import NamedTuple
 
 pygame.init()
 pygame.display.set_caption("Морской бой")
@@ -14,13 +14,18 @@ UPPER_MARGIN = 40
 FONT_SIZE = int(BLOCK_SIZE / 1.6)
 FONT = pygame.font.SysFont("Verdana", FONT_SIZE)
 
-FieldSize = namedtuple("FieldSize", ["height", "width"])
+
+class FieldSize(NamedTuple):
+    """Represents field dimensions."""
+
+    height: int
+    width: int
 
 
 class DrawField:
     """Класс для отрисовки игрового поля и его элементов."""
 
-    LETTERS = [
+    _LETTERS = [
         "A",
         "B",
         "C",
@@ -39,15 +44,8 @@ class DrawField:
         "P",
     ]
 
-    def __init__(self, field_size: FieldSize = FieldSize(10, 10)) -> None:
-        """
-        Инициализация объекта отрисовки поля.
-
-        Args:
-            field_size: Размер поля в клетках (ширина, высота)
-        """
-        self._field_size: FieldSize = field_size
-        # Динамический расчет размера окна
+    def __init__(self, field_size: FieldSize) -> None:
+        self._field_size = field_size
         self._screen_width = (
             LEFT_RIGHT_MARGIN * 2
             + self._field_size.width * BLOCK_SIZE * 2
@@ -73,7 +71,7 @@ class DrawField:
 
     def draw_field_grid(self) -> None:
         """Отрисовывает сетку игрового поля с координатами."""
-        letters = self.LETTERS[: self._field_size.width]
+        letters = self._LETTERS[: self._field_size.width]
 
         # Отрисовка сетки для обоих полей
         for field in range(2):

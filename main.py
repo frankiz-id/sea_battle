@@ -1,3 +1,4 @@
+from base_battleship_game import BaseBattleshipGame
 from game_with_computer import GameWithComputer
 from game_with_friend import GameWithFriend
 from main_menu import MainMenu
@@ -5,14 +6,10 @@ from enums import AIType, GameMode
 
 
 def main() -> None:
-    """
-    Основная функция игры.
-    Запускает главное меню и инициализирует выбранный режим игры.
-    """
     menu = MainMenu()
     game_mode, ship_placement, field_size, ship_config = menu.run()
 
-    cur_game: GameWithComputer | GameWithFriend
+    cur_game: BaseBattleshipGame
 
     if game_mode == GameMode.WEAK_AI:
         cur_game = GameWithComputer(
